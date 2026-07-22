@@ -1,0 +1,119 @@
+<nav class="navbar" *ngIf="shouldShowNavbar">
+
+  <!-- IZQUIERDA -->
+  <div class="logo" (click)="go('/feed')">Campus Social</div>
+
+  <!-- CENTRO -->
+  <div class="search-box">
+
+    <i class="bi bi-search search-icon"></i>
+
+    <input
+      type="text"
+      placeholder="Buscar usuarios o publicaciones..."
+      [(ngModel)]="query"
+      (input)="onSearch()"
+      (focus)="showDropdown = true"
+      (blur)="onBlur()">
+
+    <!-- DROPDOWN -->
+    <div class="search-results" *ngIf="showDropdown && query.trim().length > 0">
+
+      <div class="no-results" *ngIf="results.length === 0 && !isSearching">
+        <i class="bi bi-search"></i>
+        <span>No se encontró "{{ query }}"</span>
+      </div>
+
+      <div class="search-loading" *ngIf="isSearching">
+        <div class="spinner"></div>
+        <span>Buscando...</span>
+      </div>
+
+      <ng-container *ngIf="!isSearching">
+
+        <div class="result-group-label" *ngIf="userResults.length > 0">Personas</div>
+        <div class="result-item" *ngFor="let r of userResults" (mousedown)="go(r.route)">
+          <img [src]="r.photoURL || 'assets/default-avatar.png'" class="result-avatar">
+          <div class="result-info">
+            <span class="result-name">{{ r.name }}</span>
+            <span class="result-type">Usuario</span>
+          </div>
+          <i class="bi bi-person"></i>
+        </div>
+
+        <div class="result-group-label" *ngIf="postResults.length > 0">Publicaciones</div>
+        <div class="result-item" *ngFor="let r of postResults" (mousedown)="go(r.route)">
+          <div class="result-info">
+            <span class="result-name">{{ r.name }}</span>
+            <span class="result-type">Publicación</span>
+          </div>
+          <i class="bi bi-file-text"></i>
+        </div>
+
+        <div class="result-group-label" *ngIf="reelResults.length > 0">Reels</div>
+        <div class="result-item" *ngFor="let r of reelResults" (mousedown)="go(r.route)">
+          <div class="result-avatar reel-avatar">🎥</div>
+          <div class="result-info">
+            <span class="result-name">{{ r.name || 'Reel sin descripción' }}</span>
+            <span class="result-type">Reel</span>
+          </div>
+          <i class="bi bi-play-circle"></i>
+        </div>
+
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- DERECHA -->
+  <div class="nav-right">
+
+    <div class="nav-center">
+      <i class="bi bi-house-door" (click)="go('/feed')"></i>
+      <i class="bi bi-camera-video" (click)="go('/reels')"></i>
+      <i class="bi bi-people" (click)="go('/friends')"></i>
+
+      <!-- ─── CHAT ─── -->
+      <div class="notification-wrapper">
+        <i class="bi bi-chat-dots" (click)="go('/chat')" title="Mensajes"></i>
+        <span class="notification-badge" *ngIf="(unreadChatsCount$ | async) as count">
+          {{ count > 99 ? '99+' : count }}
+        </span>
+      </div>
+
+      <!-- ─── NOTIFICACIONES ─── -->
+      <div class="notification-wrapper notif-wrapper" (click)="$event.stopPropagation()">
+        <i
+          class="bi bi-bell"
+          [class.active]="showNotifications"
+          (click)="toggleNotifications($event)"
+          title="Notificaciones">
+        </i>
+
+        <span class="notification-badge" *ngIf="ns.unreadCount() > 0">
+          {{ ns.unreadCount() > 99 ? '99+' : ns.unreadCount() }}
+        </span>
+
+        <app-notifications-panel
+          *ngIf="showNotifications"
+          (close)="showNotifications = false">
+        </app-notifications-panel>
+      </div>
+
+      <i class="bi bi-microsoft" (click)="openTeams()"></i>
+      <i class="bi bi-mortarboard" (click)="openMoodle()"></i>
+    </div>
+
+    <ng-container *ngIf="user$ | async as user">
+      <div class="user-section" (click)="toggleMenu(); $event.stopPropagation()">
+        <img [src]="user.photoURL || 'assets/default-avatar.png'" class="avatar">
+        <div class="menu" *ngIf="isMenuOpen">
+          <div class="menu-item" (click)="go('/profile')">Mi perfil</div>
+          <div class="menu-item" (click)="go('/saved')">Guardados</div>
+          <div class="menu-item logout" (click)="logout()">Cerrar sesión</div>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+
+</nav>

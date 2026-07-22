@@ -1,0 +1,131 @@
+@import "bootstrap-icons/font/bootstrap-icons.scss";
+
+/* ============================================================
+   VARIABLES UNIAJC
+   ============================================================ */
+:root {
+  --primary-blue: #003893;      /* Azul institucional */
+  --primary-blue-dark: #002c73; /* Hover */
+  --secondary-yellow: #FFCC00;  /* Amarillo institucional */
+
+  --white: #ffffff;
+  --gray: #f5f5f5;
+  --dark-text: #1c1e21;
+
+  --card-bg: #ffffff;
+  --shadow: 0 2px 6px rgba(0,0,0,0.10);
+
+  --radius: 12px;
+}
+
+/* ============================================================
+   CONFIG BASE
+   ============================================================ */
+body {
+  font-family: 'Roboto', sans-serif;
+  background: var(--gray);
+  margin: 0;
+  padding: 0;
+  color: var(--dark-text);
+}
+
+/* ============================================================
+   BOTONES
+   ============================================================ */
+.btn-primary {
+  background-color: var(--primary-blue) !important;
+  border-color: var(--primary-blue) !important;
+  border-radius: 10px !important;
+  padding: 10px 16px;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-blue-dark) !important;
+}
+
+.btn-secondary {
+  background-color: var(--secondary-yellow) !important;
+  border-color: var(--secondary-yellow) !important;
+  color: #000 !important;
+  border-radius: 10px !important;
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+input, textarea {
+  border-radius: 8px !important;
+  padding: 10px !important;
+  border: 1px solid #ccc !important;
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card {
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+/* ============================================================
+   CONTENEDORES GLOBAL STYLE (para tus nuevas páginas)
+   ============================================================ */
+.page-container {
+  padding: 20px;
+  margin-top: 70px; /* espacio por navbar */
+}
+
+/* Títulos uniformes */
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--dark-text);
+}
+
+/* ============================================================
+   ELEMENTOS GRID (reels, friends, saved)
+   ============================================================ */
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid-3 {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+/* ============================================================
+   AVATARS GLOBALES
+   ============================================================ */
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 100%;
+  object-fit: cover;
+}
+
+/* ============================================================
+   SCROLL Y MOBILE
+   ============================================================ */
+html, body {
+  overscroll-behavior: none;
+}
+
+@media (max-width: 600px) {
+  .page-container {
+    padding: 12px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  .reel-uploader { .card { border-radius: 12px; } textarea { min-height: 80px; } .tags { span { margin-right: 6px; color: #006; } } }
+.nav-center i { font-size: 20px; margin: 0 8px; cursor: pointer; color: white; }
+.navbar { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; background: var(--primary-blue); color: #fff; }
+.user-section { position:relative; .menu { position:absolute; right:0; top:48px; background:#fff; color:#000; border-radius:8px; box-shadow: 0 6px 18px rgba(0,0,0,.12); } }
+.search-results { position:absolute; background:#fff; box-shadow:0 8px 20px rgba(0,0,0,.12); z-index:50; width:320px; }
+}

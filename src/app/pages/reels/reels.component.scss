@@ -1,0 +1,774 @@
+/* ============================================
+   VARIABLES
+   ============================================ */
+$azul-fb:       #1877f2;
+$azul-hover:    #166fe5;
+$azul-suave:    rgba(24, 119, 242, 0.08);
+$blanco:        #ffffff;
+$gris-texto:    #050505;
+$gris-muted:    #65676b;
+$gris-claro:    #f0f2f5;
+$gris-borde:    #dadde1;
+$shadow-card:   0 1px 3px rgba(0,0,0,0.12);
+$shadow-menu:   0 8px 24px rgba(0,0,0,0.15);
+$radius-card:   12px;
+$radius-pill:   999px;
+$transition:    0.15s ease;
+
+/* ============================================
+   PÁGINA PRINCIPAL
+   ============================================ */
+.reels-page {
+  max-width: 650px;
+  margin: 0 auto;
+  padding: 16px 8px 48px;
+  background: $gris-claro;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 15px;
+  color: $gris-texto;
+
+  /* ============================================
+     UPLOADER
+     ============================================ */
+  .reel-uploader {
+    background: $blanco;
+    border-radius: $radius-card;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid $gris-borde;
+    box-shadow: $shadow-card;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    input[type="file"] {
+      font-size: 13px;
+      color: $gris-muted;
+      cursor: pointer;
+    }
+
+    textarea {
+      border-radius: 18px;
+      border: 1px solid $gris-borde;
+      background: $gris-claro;
+      padding: 10px 14px;
+      resize: none;
+      font-size: 15px;
+      font-family: inherit;
+      color: $gris-texto;
+      transition: border-color $transition, background $transition;
+
+      &::placeholder { color: $gris-muted; }
+      &:focus {
+        outline: none;
+        background: $blanco;
+        border-color: $azul-fb;
+      }
+    }
+
+    button {
+      background: $azul-fb;
+      color: $blanco;
+      border: none;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background $transition;
+
+      &:hover:not(:disabled) { background: $azul-hover; }
+      &:disabled { opacity: 0.55; cursor: not-allowed; }
+    }
+  }
+
+  /* ============================================
+     REEL CARD
+     ============================================ */
+  .reel-card {
+    background: $blanco;
+    border-radius: $radius-card;
+    margin-bottom: 16px;
+    border: 1px solid $gris-borde;
+    box-shadow: $shadow-card;
+    overflow: hidden;
+
+    video {
+      width: 100%;
+      max-height: 520px;
+      display: block;
+      background: #000;
+    }
+
+    .reel-header {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px 8px;
+      gap: 10px;
+
+      .avatar-img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+        transition: opacity $transition;
+        &:hover { opacity: 0.85; }
+      }
+
+      strong {
+        font-size: 14px;
+        font-weight: 600;
+        color: $gris-texto;
+        &:hover { text-decoration: underline; }
+      }
+    }
+
+    > p {
+      padding: 4px 16px 12px;
+      font-size: 15px;
+      color: $gris-texto;
+      margin: 0;
+      line-height: 1.45;
+    }
+  }
+
+  /* ============================================
+     ACTIONS BAR
+     ============================================ */
+  .actions {
+    display: flex;
+    align-items: stretch;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    padding: 2px 4px;
+    gap: 2px;
+
+    .action-btn,
+    .reaction-btn {
+      flex: 1;
+      padding: 8px 4px;
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 600;
+      color: $gris-muted;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      border-radius: 6px;
+      transition: background $transition, color $transition;
+      white-space: nowrap;
+
+      span { font-size: 13px; }
+
+      &:hover { background: rgba(0,0,0,0.05); color: $gris-texto; }
+      &:active { background: rgba(0,0,0,0.09); }
+      &.danger { color: #e41e3f; &:hover { background: rgba(228,30,63,0.07); } }
+    }
+  }
+
+  /* ============================================
+     STATS
+     ============================================ */
+  .post-stats {
+    padding: 8px 16px;
+    font-size: 13px;
+    color: $gris-muted;
+    display: flex;
+    gap: 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+
+    span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      &[style*="cursor:pointer"]:hover { text-decoration: underline; }
+    }
+  }
+
+  /* ============================================
+     REACCIONES — COLORES
+     ============================================ */
+  .reaction-none  { color: $gris-muted; }
+  .reaction-like  { color: $azul-fb  !important; }
+  .reaction-love  { color: #f02849   !important; }
+  .reaction-haha,
+  .reaction-wow   { color: #f7b125   !important; }
+  .reaction-sad   { color: #8a8d91   !important; }
+  .reaction-angry { color: #e41e3f   !important; }
+
+  /* ============================================
+     MENÚ FLOTANTE DE REACCIONES (REEL)
+     ============================================ */
+  .reaction-menu {
+    position: fixed;
+    z-index: 2000;
+    background: $blanco;
+    border-radius: $radius-pill;
+    border: 1px solid $gris-borde;
+    box-shadow: $shadow-menu;
+    padding: 8px 14px;
+    display: flex;
+    gap: 8px;
+    animation: fadeInUp 0.18s ease;
+
+    .reaction-item {
+      background: transparent;
+      border: none;
+      font-size: 26px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px;
+      border-radius: 50%;
+      transition: transform 0.15s;
+      &:hover { transform: scale(1.35) translateY(-5px); }
+    }
+  }
+
+  /* ============================================
+     MENÚ REACCIONES DE COMENTARIO
+     ============================================ */
+  .reaction-menu-comment {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: $blanco;
+    border: 1px solid $gris-borde;
+    border-radius: $radius-pill;
+    box-shadow: $shadow-menu;
+    padding: 4px 10px;
+    margin: 4px 0;
+    animation: fadeInUp 0.18s ease;
+
+    .reaction-item {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 50%;
+      transition: transform 0.15s;
+      &:hover { transform: scale(1.3) translateY(-3px); }
+    }
+  }
+
+  /* ============================================
+     PANEL DE COMENTARIOS
+     ============================================ */
+  .comments-panel {
+    padding: 12px 16px 16px;
+    background: $blanco;
+    border-top: 1px solid $gris-borde;
+
+    h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: $gris-muted;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 12px;
+    }
+
+    /* ── Comentario individual ── */
+    .comment-item {
+      margin-bottom: 14px;
+
+      .avatar-img {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+        &:hover { opacity: 0.85; cursor: pointer; }
+      }
+
+      .comment-body {
+        background: $gris-claro;
+        padding: 8px 12px;
+        border-radius: 18px;
+        display: inline-block;
+        max-width: 92%;
+
+        strong {
+          font-size: 13px;
+          font-weight: 700;
+          color: $gris-texto;
+          cursor: pointer;
+          &:hover { text-decoration: underline; }
+        }
+
+        .comment-text {
+          font-size: 14px;
+          color: $gris-texto;
+          margin: 3px 0 0;
+          background: transparent;
+          padding: 0;
+          box-shadow: none;
+          line-height: 1.4;
+        }
+      }
+
+      /* ── Acciones del comentario ── */
+      .comment-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-top: 5px;
+        padding-left: 12px;
+        font-size: 12px;
+        font-weight: 700;
+        color: $gris-muted;
+
+        .action {
+          cursor: pointer;
+          user-select: none;
+          &:hover { text-decoration: underline; }
+          &.delete { color: #e41e3f; }
+          &.edit   { color: $gris-muted; }
+          &.reply  { color: $gris-muted; }
+          &.reaction { border-radius: 4px; }
+        }
+
+        .comment-date {
+          font-weight: 400;
+          font-size: 11px;
+          color: lighten($gris-muted, 15%);
+          margin-left: auto;
+        }
+      }
+
+      /* ── Respuestas ── */
+      .replies-list {
+        margin-top: 8px;
+        padding-left: 12px;
+        border-left: 2px solid $gris-borde;
+
+        .comment-item {
+          margin-bottom: 8px;
+
+          .avatar-img {
+            width: 28px;
+            height: 28px;
+          }
+
+          strong {
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            &:hover { text-decoration: underline; }
+          }
+
+          p {
+            font-size: 13px;
+            margin: 2px 0;
+            color: $gris-texto;
+          }
+        }
+      }
+
+      /* ── Caja responder ── */
+      .reply-box {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+        padding-left: 12px;
+
+        textarea {
+          flex: 1;
+          border-radius: 12px;
+          border: 1px solid $gris-borde;
+          background: $gris-claro;
+          padding: 6px 10px;
+          font-size: 13px;
+          resize: none;
+          &:focus { outline: none; border-color: $azul-fb; background: $blanco; }
+        }
+      }
+    }
+
+    /* ── Textarea nuevo comentario ── */
+    textarea {
+      width: 100%;
+      border-radius: 18px;
+      background: $gris-claro;
+      border: 1px solid $gris-borde;
+      font-size: 14px;
+      padding: 10px 14px;
+      resize: none;
+      box-sizing: border-box;
+      font-family: inherit;
+      color: $gris-texto;
+      transition: border-color $transition, background $transition;
+
+      &::placeholder { color: $gris-muted; }
+      &:focus { outline: none; border-color: $azul-fb; background: $blanco; }
+    }
+
+    /* ── Botón comentar ── */
+    .btn-success {
+      display: block;
+      width: 100%;
+      margin-top: 8px;
+      padding: 10px;
+      background: $azul-fb;
+      color: $blanco;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background $transition;
+
+      &:hover { background: $azul-hover; }
+      &:active { background: darken($azul-hover, 4%); }
+    }
+
+    /* ── Sin comentarios ── */
+    .text-muted {
+      color: $gris-muted;
+      font-size: 13px;
+      text-align: center;
+      padding: 12px 0;
+    }
+  }
+
+  /* ============================================
+     MODALES — LISTA DE REACCIONES
+     ============================================ */
+  .reactions-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.15s ease;
+
+    .reactions-modal {
+      background: $blanco;
+      border-radius: 14px;
+      width: min(380px, 92vw);
+      max-height: 70vh;
+      overflow-y: auto;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+
+      .reactions-modal-header {
+        position: sticky;
+        top: 0;
+        background: $blanco;
+        padding: 14px 16px;
+        border-bottom: 1px solid $gris-borde;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 1;
+
+        h4 {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 700;
+          text-transform: none;
+          letter-spacing: 0;
+          color: $gris-texto;
+        }
+
+        .close-modal-btn {
+          background: $gris-claro;
+          border: none;
+          border-radius: 50%;
+          width: 32px;
+          height: 32px;
+          font-size: 16px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: $gris-muted;
+          transition: background $transition;
+          &:hover { background: darken($gris-claro, 5%); }
+        }
+      }
+
+      .reaction-user-row {
+        display: flex;
+        align-items: center;
+        padding: 10px 16px;
+        gap: 12px;
+        transition: background $transition;
+        &:hover { background: $gris-claro; }
+
+        .reaction-user-avatar {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          object-fit: cover;
+          flex-shrink: 0;
+        }
+
+        .reaction-user-info { flex: 1; min-width: 0; }
+
+        .reaction-user-name {
+          font-size: 14px;
+          font-weight: 600;
+          color: $gris-texto;
+          display: block;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .reaction-user-emoji { font-size: 20px; }
+      }
+
+      .text-muted {
+        color: $gris-muted;
+        font-size: 14px;
+        text-align: center;
+        padding: 24px;
+      }
+    }
+  }
+
+  /* ─── Modal Repost ─────────────────────── */
+.repost-modal {
+  max-width: 460px;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.repost-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0f2f5;
+  border-left: 3px solid #1877f2;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 14px 0;
+
+  p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #65676b;
+  }
+}
+
+.repost-preview-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* ─── Menciones ────────────────────────── */
+.mention-wrapper {
+  position: relative;
+}
+
+.repost-textarea {
+  resize: none;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.mention-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.13);
+  z-index: 1000;
+  max-height: 230px;
+  overflow-y: auto;
+}
+
+.mention-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #f0f2f5;
+  }
+
+  &:first-child { border-radius: 10px 10px 0 0; }
+  &:last-child  { border-radius: 0 0 10px 10px; }
+}
+
+.mention-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.mention-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ─── Tags chip ────────────────────────── */
+.repost-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.repost-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e7f3ff;
+  color: #1877f2;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.remove-tag {
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: #1877f2;
+  opacity: 0.7;
+
+  &:hover { opacity: 1; }
+}
+
+/* ─── Botones del modal ─────────────────── */
+.repost-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+  /* ============================================
+     TOAST
+     ============================================ */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #242526;
+    color: $blanco;
+    padding: 11px 20px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: fadeInUp 0.2s ease;
+    z-index: 9999;
+  }
+}
+
+/* ============================================
+   UTILIDADES BOOTSTRAP (MÍNIMAS)
+   ============================================ */
+.d-flex   { display: flex; }
+.gap-2    { gap: 8px; }
+.mt-1     { margin-top: 4px; }
+.mt-2     { margin-top: 8px; }
+.ms-3     { margin-left: 16px; }
+.ms-auto  { margin-left: auto; }
+.mb-1     { margin-bottom: 4px; }
+.w-100    { width: 100%; }
+
+.form-control {
+  width: 100%;
+  border: 1px solid $gris-borde;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: $gris-claro;
+  color: $gris-texto;
+  box-sizing: border-box;
+  transition: border-color $transition, background $transition;
+  &:focus { outline: none; border-color: $azul-fb; background: $blanco; }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background $transition;
+
+  &.btn-sm  { padding: 5px 10px; font-size: 13px; }
+  &.btn-primary {
+    background: $azul-fb; color: $blanco;
+    &:hover { background: $azul-hover; }
+  }
+  &.btn-success {
+    background: $azul-fb; color: $blanco;
+    &:hover { background: $azul-hover; }
+  }
+}
+
+.toast-notification {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  animation: fadeInUp 0.25s ease;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.mention-link {
+  color: #1877f2;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

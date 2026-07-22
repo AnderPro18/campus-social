@@ -1,0 +1,656 @@
+/* ============================================
+   PALETA MODERNA (FACEBOOK STYLE)
+============================================ */
+$azul-uniajc: #1877f2;
+$azul-suave: rgba(24, 119, 242, 0.08);
+
+$blanco: #ffffff;
+$gris-texto: #050505;
+$gris-muted: #65676b;
+$gris-claro: #f0f2f5;
+$gris-borde: #dadde1;
+
+/* ============================================
+   CONTENEDOR GENERAL
+============================================ */
+.feed-container {
+  max-width: 650px;
+  margin: 20px auto;
+  padding: 8px;
+  background: $gris-claro;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* ============================================
+   CREAR PUBLICACIÓN
+============================================ */
+.new-post-card {
+  background: $blanco;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid $gris-borde;
+  overflow: hidden;
+}
+
+.new-post-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: $gris-texto;
+    margin: 0;
+  }
+
+  .avatar-big {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: $azul-uniajc;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.new-post-input {
+  border-radius: 18px;
+  border: 1px solid $gris-borde;
+  background: $gris-claro;
+  padding: 10px 14px;
+  resize: none;
+
+  &:focus {
+    outline: none;
+    background: white;
+    border-color: $azul-uniajc;
+  }
+}
+
+/* ============================================
+   PREVIEW IMAGEN ANTES DE PUBLICAR
+============================================ */
+.image-preview-container {
+  position: relative;
+
+  .image-preview {
+    width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    border-radius: 12px;
+    margin-top: 10px;
+    background: $gris-claro;
+  }
+
+  .remove-image-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #111;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.85;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+/* ============================================
+   POST CARD
+============================================ */
+.post-card {
+  background: $blanco;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  border: 1px solid $gris-borde;
+  padding: 0; // 🔑 Facebook no usa padding global
+}
+
+/* ============================================
+   HEADER POST
+============================================ */
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 16px 8px;
+}
+
+.post-avatar img,
+.avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-fallback {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: $azul-uniajc;
+  color: white;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.post-user {
+  font-size: 14px;
+  font-weight: 600;
+  color: $gris-texto;
+}
+
+.post-date {
+  font-size: 12px;
+  color: $gris-muted;
+}
+
+/* ============================================
+   CONTENIDO POST
+============================================ */
+.post-content {
+  padding: 8px 16px 12px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: $gris-texto;
+  white-space: pre-line;
+}
+
+.post-image,
+.post-video {
+  width: 100%;
+  max-height: 500px;
+  object-fit: cover;
+  border-radius: 0;
+  background: black;
+  margin-top: 10px;
+}
+
+/* ============================================
+   REPOST
+============================================ */
+.repost-info {
+  font-size: 13px;
+  font-weight: 600;
+  color: $azul-uniajc;
+  background: $azul-suave;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+/* ============================================
+   ACCIONES
+============================================ */
+.post-actions {
+  display: flex;
+  border-top: 1px solid rgba(0,0,0,0.06);
+
+  button {
+    flex: 1;
+    padding: 10px 0;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: $gris-muted;
+    cursor: pointer;
+    transition: background 0.12s ease;
+
+    &:hover {
+      background: rgba(0,0,0,0.04);
+    }
+  }
+}
+
+/* ============================================
+   BOTÓN REACCIÓN – COLORES
+============================================ */
+.reaction-like   { color: #1877f2; }
+.reaction-love   { color: #f02849; }
+.reaction-haha   { color: #f7b125; }
+.reaction-wow    { color: #f7b125; }
+.reaction-sad    { color: #8a8d91; }
+.reaction-angry  { color: #e41e3f; }
+
+.reaction-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ============================================
+   MENÚ REACCIONES
+============================================ */
+.reaction-menu {
+  position: fixed;
+  z-index: 2000;
+  background: white;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+  padding: 8px 12px;
+  display: flex;
+  gap: 10px;
+}
+
+.reaction-item {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+
+  &:hover {
+    transform: scale(1.25);
+  }
+}
+
+/* ============================================
+   STATS
+============================================ */
+.post-stats {
+  padding: 6px 16px;
+  font-size: 13px;
+  color: $gris-muted;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ============================================
+   COMENTARIOS
+============================================ */
+.comments-panel {
+  padding: 12px 16px;
+  background: $gris-claro;
+
+  .comment-item {
+    background: white;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+  }
+
+  textarea {
+    border-radius: 12px;
+    resize: none;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+  }
+}
+
+/* ============================================
+   MENÚ ⋮
+============================================ */
+.menu-post {
+  position: relative;
+}
+
+.menu-btn {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: $gris-muted;
+}
+
+.menu-options {
+  position: absolute;
+  right: 0;
+  top: 28px;
+  width: 160px;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid $gris-borde;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  z-index: 20;
+}
+
+/* ============================================
+   TOAST
+============================================ */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #242526;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  z-index: 9999;
+}
+
+.tag-user {
+  color: #1877f2;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* ============================================
+   ACCIONES COMENTARIOS (PRO)
+============================================ */
+.comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+
+  .action {
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: #f0f2f5;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(24,119,242,0.1);
+      color: #1877f2;
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  .delete {
+    color: #e41e3f;
+
+    &:hover {
+      background: rgba(228,30,63,0.1);
+    }
+  }
+
+  .comment-date {
+    margin-left: auto;
+    font-size: 11px;
+    color: #65676b;
+  }
+}
+
+    .reaction {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+/* ============================================
+   COLORES REACCIONES (COMENTARIOS)
+============================================ */
+.reaction-like   { color: #1877f2; }
+.reaction-love   { color: #f02849; }
+.reaction-haha   { color: #f7b125; }
+.reaction-wow    { color: #f7b125; }
+.reaction-sad    { color: #8a8d91; }
+.reaction-angry  { color: #e41e3f; }
+
+/* ============================================
+   MENÚ REACCIONES COMENTARIOS
+============================================ */
+.reaction-menu-comment {
+  position: absolute;
+  background: white;
+  border-radius: 20px;
+  padding: 6px 10px;
+  display: flex;
+  gap: 6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  z-index: 9999;
+  margin-top: 5px;
+}
+  .reaction-item {
+    border: none;
+    background: transparent;
+    font-size: 18px;
+    cursor: pointer;
+    transition: transform 0.15s;
+
+    &:hover {
+      transform: scale(1.3);
+    }
+  }
+
+/* ============================================
+   BOTONES DE COMENTARIOS (PRO)
+============================================ */
+.comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+
+  .action {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f0f2f5;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(24,119,242,0.1);
+    color: #1877f2;
+  }
+}
+
+.action.delete {
+  color: #e41e3f;
+
+  &:hover {
+    background: rgba(228,30,63,0.1);
+  }
+}
+
+.comment-date {
+  font-size: 11px;
+  color: #65676b;
+}
+
+    /* 🔥 CLICK */
+    &:active {
+      transform: scale(0.95);
+    }
+
+    /* VARIANTES */
+    &.reaction {
+      font-weight: 700;
+    }
+
+    &.delete {
+      color: #e41e3f;
+
+      &:hover {
+        background: rgba(228, 30, 63, 0.1);
+        color: #e41e3f;
+        border-color: rgba(228, 30, 63, 0.2);
+      }
+    }
+
+    &.edit {
+      color: #1877f2;
+    }
+
+    &.reply {
+      color: #1877f2;
+    }
+  }
+
+  .reaction-item {
+  transition: transform 0.15s ease, filter 0.15s;
+
+  &:hover {
+    transform: scale(1.3) translateY(-4px);
+    filter: brightness(1.1);
+  }
+}
+
+/* ============================================
+   MODAL REACCIONES
+============================================ */
+.reactions-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reactions-modal {
+  background: white;
+  border-radius: 14px;
+  width: 340px;
+  max-height: 70vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  animation: fadeInUp 0.18s ease;
+}
+
+.reactions-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #e4e6ea;
+
+  h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #050505;
+  }
+}
+
+.close-modal-btn {
+  background: #f0f2f5;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #65676b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: #e4e6ea;
+  }
+}
+
+.reaction-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  transition: background 0.12s;
+
+  &:hover {
+    background: #f0f2f5;
+  }
+}
+
+.reaction-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e4e6ea;
+}
+
+.reaction-user-info {
+  flex: 1;
+}
+
+.reaction-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #050505;
+}
+
+.reaction-user-emoji {
+  font-size: 20px;
+}
+
+.mention-wrapper { position: relative; }
+
+.mention-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.13);
+  z-index: 1000;
+  max-height: 230px;
+  overflow-y: auto;
+}
+
+.mention-option {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; cursor: pointer; transition: background 0.15s;
+  &:hover { background: #f0f2f5; }
+  &:first-child { border-radius: 10px 10px 0 0; }
+  &:last-child  { border-radius: 0 0 10px 10px; }
+}
+
+.mention-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+.mention-name   { font-size: 14px; font-weight: 500; }
+
+.repost-modal   { max-width: 460px; padding: 20px; border-radius: 12px; }
+
+.repost-preview {
+  display: flex; align-items: center; gap: 10px;
+  background: #f0f2f5; border-left: 3px solid #1877f2;
+  border-radius: 8px; padding: 10px 12px; margin: 14px 0;
+  p { margin: 2px 0 0; font-size: 12px; color: #65676b; }
+}
+
+.repost-preview-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.repost-textarea { resize: none; font-size: 14px; border-radius: 8px; }
+
+.repost-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.repost-tag-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #e7f3ff; color: #1877f2;
+  border-radius: 20px; padding: 4px 12px; font-size: 13px; font-weight: 500;
+}
+.remove-tag { cursor: pointer; font-size: 16px; opacity: 0.7; &:hover { opacity: 1; } }
+.repost-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+

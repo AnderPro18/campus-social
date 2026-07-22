@@ -1,0 +1,45 @@
+<div class="page-container friends-page">
+  <h2 class="page-title">Personas</h2>
+
+  <div class="friend-card" *ngFor="let u of users">
+    <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png">
+
+    <div class="info">
+      <h4>{{ u.name || u.email }}</h4>
+
+      <!-- 🔹 SI YA EXISTE RELACIÓN -->
+      <ng-container *ngIf="getRequestBetween(u.id) as req; else noRelation">
+
+        <!-- Yo envié -->
+        <button *ngIf="req.from === currentUserId && req.status === 'pending'" disabled>
+          Solicitud enviada
+        </button>
+
+        <!-- Me enviaron -->
+        <div *ngIf="req.to === currentUserId && req.status === 'pending'">
+          <button (click)="acceptRequest(req)">Aceptar</button>
+          <button (click)="rejectRequest(req)">Rechazar</button>
+        </div>
+
+        <!-- Ya son amigos -->
+        <button *ngIf="req.status === 'accepted'" disabled>
+          Amigos
+        </button>
+
+        <!-- Rechazada -->
+        <button *ngIf="req.status === 'rejected'" (click)="sendRequest(u.id)">
+          Enviar nuevamente
+        </button>
+
+      </ng-container>
+
+      <!-- 🔹 SIN RELACIÓN -->
+      <ng-template #noRelation>
+        <button (click)="sendRequest(u.id)">
+          Agregar amigo
+        </button>
+      </ng-template>
+
+    </div>
+  </div>
+</div>

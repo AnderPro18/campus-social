@@ -1,0 +1,13 @@
+:root {
+  --uniajc-blue: #003893;
+  --uniajc-yellow: #ffd200;
+  --uniajc-white: #ffffff;
+  --app-bg: #f5f7fb;
+}
+
+.app-container{
+  min-height: 100vh;
+  background: var(--app-bg);
+  color: var(--uniajc-blue);
+  font-family: 'Roboto', sans-serif;
+}

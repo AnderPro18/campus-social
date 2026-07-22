@@ -1,0 +1,293 @@
+.saved-page {
+  background: #f0f2f5;
+  padding: 16px;
+}
+
+.saved-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+  margin-bottom: 16px;
+  transition: 0.15s ease-in-out;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+  }
+}
+
+// ── Thumbnail compartido (imagen y video) ──────────────────────
+.saved-thumb {
+  width: 90px;
+  height: 90px;
+  border-radius: 10px;
+  object-fit: cover;
+  object-position: center;
+  flex-shrink: 0;
+}
+
+video.saved-thumb {
+  width: 90px;
+  height: 90px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #000;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+// ── Wrapper del reel (necesario para posicionar el badge) ──────
+.reel-thumb-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.reel-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+// ── Info ────────────────────────────────────────────────────────
+.saved-info {
+  flex: 1;
+
+  .saved-title {
+    font-weight: 600;
+    color: #222;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .saved-date {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 6px;
+  }
+}
+
+.saved-no-img {
+  padding-left: 2px;
+}
+
+.saved-meta {
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+// ── Reacciones ──────────────────────────────────────────────────
+.saved-reactions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .emoji-bubble {
+    display: flex;
+    gap: 4px;
+    font-size: 18px;
+
+    span {
+      display: inline-flex;
+      background: white;
+      border-radius: 50%;
+      padding: 2px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+  }
+
+  .reaction-total {
+    font-size: 13px;
+    color: #444;
+    font-weight: 600;
+  }
+}
+
+// ── Botón eliminar ──────────────────────────────────────────────
+.trash-btn {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 3px 6px;
+  opacity: 0.7;
+  transition: 0.2s;
+
+  &:hover {
+    opacity: 1;
+    transform: scale(1.15);
+    background: white;
+  }
+}
+
+// ── Responsive ──────────────────────────────────────────────────
+@media (max-width: 500px) {
+  .saved-thumb,
+  video.saved-thumb {
+    width: 70px;
+    height: 70px;
+  }
+
+  .saved-card {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .saved-title {
+    font-size: 14px;
+  }
+}
+
+// ── No thumb placeholder ────────────────────────────────────────
+.no-thumb {
+  width: 90px;
+  height: 90px;
+  border-radius: 10px;
+  background: #f0f2f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+// ── Modal overlay ───────────────────────────────────────────────
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// ── Modal box ───────────────────────────────────────────────────
+.modal-box {
+  background: #fff;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+  animation: slideUp 0.18s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+// ── Modal header ────────────────────────────────────────────────
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.modal-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.modal-author strong {
+  display: block;
+  font-size: 15px;
+  color: #1c1e21;
+}
+
+.modal-date {
+  font-size: 12px;
+  color: #65676b;
+}
+
+.modal-close {
+  background: #f0f2f5;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #444;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #e4e6ea;
+  }
+}
+
+// ── Modal body ──────────────────────────────────────────────────
+.modal-content {
+  padding: 12px 16px;
+  font-size: 15px;
+  color: #1c1e21;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.modal-image {
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  background: #000;
+}
+
+.modal-video {
+  width: 100%;
+  max-height: 400px;
+  background: #000;
+}
+
+// ── Modal stats ─────────────────────────────────────────────────
+.modal-stats {
+  display: flex;
+  gap: 16px;
+  padding: 12px 16px;
+  border-top: 1px solid #f0f2f5;
+  font-size: 14px;
+  color: #65676b;
+}
+
+// ── Cursor pointer en tarjetas ──────────────────────────────────
+.saved-card {
+  cursor: pointer;
+}

@@ -1,0 +1,35 @@
+<div class="post-card">
+
+  <div class="post-header">
+    <div class="post-avatar">{{ post.userName[0] | uppercase }}</div>
+    <div>
+      <b>{{ post.userName }}</b>
+      <div class="post-date">{{ post.createdAt | date:'short' }}</div>
+    </div>
+  </div>
+
+  <p class="post-text">{{ post.content }}</p>
+
+  <img *ngIf="post.imageUrl" [src]="post.imageUrl" class="post-image">
+
+  <!-- acciones -->
+  <div class="post-actions">
+
+    <button (click)="toggleReaction('like')" class="btn-action">
+      👍 {{ post.reactionsCount || 0 }}
+    </button>
+
+    <button class="btn-action">
+      💬 {{ post.commentsCount || 0 }}
+    </button>
+
+    <button class="btn-action">
+      🔁 {{ post.repostsCount || 0 }}
+    </button>
+
+    <button class="btn-action">
+      ⭐ Guardar
+    </button>
+  </div>
+
+</div>

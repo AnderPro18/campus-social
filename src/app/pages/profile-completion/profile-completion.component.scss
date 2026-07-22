@@ -1,0 +1,104 @@
+.completion-container {
+  width: 100%;
+  max-width: 420px;
+  margin: 40px auto;
+  padding: 25px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.3s ease;
+  text-align: left;
+
+  h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-weight: 600;
+    font-size: 1.6rem;
+    color: #222;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  label {
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 3px;
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #dcdcdc;
+    background: #fafafa;
+    font-size: 0.95rem;
+    color: #333;
+    outline: none;
+    transition: all 0.2s ease;
+
+    &:focus {
+      border-color: #0066ff;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.15);
+    }
+  }
+
+  textarea {
+    min-height: 90px;
+    resize: none;
+  }
+
+  .btn-save {
+    margin-top: 10px;
+    width: 100%;
+    padding: 13px;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, #0066ff, #4a8dff);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+
+    &:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+}
+
+/* ANIMACIÓN */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* RESPONSIVE */
+@media (max-width: 480px) {
+  .completion-container {
+    margin: 20px;
+    padding: 20px;
+  }
+
+  input,
+  textarea {
+    font-size: 0.9rem;
+  }
+}
