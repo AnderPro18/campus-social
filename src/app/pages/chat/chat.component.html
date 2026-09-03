@@ -1,0 +1,917 @@
+<div class="chat-layout" (click)="closeContextMenu(); closeAllMenus()">
+
+  <!-- ═══════════════════════ SIDEBAR ═══════════════════════════ -->
+  <aside class="chat-sidebar">
+
+    <!-- ── Header sidebar ── -->
+    <div class="sidebar-header">
+
+      <h2 class="sidebar-title">
+        Mensajes
+        <span></span>
+      </h2>
+
+      <div class="sidebar-actions">
+
+        <!-- Nuevo DM -->
+        <button
+          class="icon-btn"
+          (click)="showNewChat = !showNewChat; showGroupModal = false"
+          title="Nuevo mensaje"
+        >
+          <i class="bi bi-pencil-square"></i>
+        </button>
+
+        <!-- Menú 3 puntos sidebar -->
+        <div class="sidebar-menu-wrapper">
+          <button
+            class="icon-btn"
+            (click)="toggleSidebarMenu($event)"
+            title="Más opciones"
+          >
+            <i class="bi bi-three-dots-vertical"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Filtros ── -->
+    <div class="filter-tabs-wrapper">
+      <div class="filter-tabs">
+
+        <button
+          class="filter-tab"
+          [class.active]="activeFilter === 'all'"
+          (click)="setFilter('all')"
+        >
+          Todos
+        </button>
+
+        <button
+          class="filter-tab"
+          [class.active]="activeFilter === 'unread'"
+          (click)="setFilter('unread')"
+        >
+          No leídos
+        </button>
+
+        <button
+          class="filter-tab"
+          [class.active]="activeFilter === 'favorites'"
+          (click)="setFilter('favorites')"
+        >
+          Favoritos
+        </button>
+
+        <button
+          class="filter-tab"
+          [class.active]="activeFilter === 'groups'"
+          (click)="setFilter('groups')"
+        >
+          Grupos
+        </button>
+
+      </div>
+    </div>
+
+    <!-- ── Panel nuevo DM ── -->
+    <div class="new-chat-panel" *ngIf="showNewChat">
+
+      <div class="search-user-box">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          placeholder="Buscar usuario..."
+          [(ngModel)]="userSearchQuery"
+          (input)="searchUsers()"
+        />
+      </div>
+
+      <div class="user-results">
+
+        <div *ngIf="isSearchingUsers" class="searching-hint">
+          <div class="mini-spinner"></div>
+          Buscando...
+        </div>
+
+        <div
+          class="user-result-item"
+          *ngFor="let u of userSearchResults"
+          (click)="startDM(u)"
+        >
+          <img
+            [src]="u.photoURL || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+            class="user-avatar-sm"
+          />
+          <div class="user-info-sm">
+            <span class="user-name-sm">{{ u.displayName }}</span>
+            <span class="user-career-sm">{{ u.career || u.area || '' }}</span>
+          </div>
+        </div>
+
+        <div
+          *ngIf="!isSearchingUsers && userSearchResults.length === 0 && userSearchQuery"
+          class="no-users"
+        >
+          Sin resultados
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Lista de chats ── -->
+    <div class="chat-list">
+
+      <div
+        class="chat-item"
+        *ngFor="let chat of chats"
+        [class.active]="chat.id === activeChatId"
+        (click)="openChat(chat.id)"
+      >
+
+        <div class="chat-item-avatar">
+          <img
+            [src]="getChatPhoto(chat) || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+            class="chat-avatar"
+          />
+          <span class="online-dot" *ngIf="chat.type === 'dm'"></span>
+        </div>
+
+        <div class="chat-item-info">
+
+          <div class="chat-item-top">
+            <span class="chat-name">{{ getChatName(chat) }}</span>
+            <span class="chat-time" *ngIf="chat.lastUpdated">
+              {{ formatTime(chat.lastUpdated) }}
+            </span>
+          </div>
+
+          <div class="chat-item-bottom">
+            <span class="chat-preview">{{ chat.lastMessage || 'Sin mensajes' }}</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="empty-chats" *ngIf="chats.length === 0">
+        <i class="bi bi-chat-dots"></i>
+        <p>
+          {{
+            activeFilter === 'unread'   ? 'Sin chats no leídos' :
+            activeFilter === 'favorites'? 'Sin favoritos'        :
+            activeFilter === 'groups'   ? 'Sin grupos'           :
+            'No tienes conversaciones'
+          }}
+        </p>
+        <span *ngIf="activeFilter === 'all'">Toca ✏️ para iniciar</span>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════ PANEL PRINCIPAL ════════════════════ -->
+  <main class="chat-main">
+
+    <!-- Vacío -->
+    <div class="chat-empty" *ngIf="!activeChatId">
+      <div class="empty-icon">
+        <i class="bi bi-chat-heart"></i>
+      </div>
+      <h3>Tus mensajes</h3>
+      <p>Selecciona una conversación o inicia una nueva</p>
+      <button class="btn-start-chat" (click)="showNewChat = true">
+        <i class="bi bi-pencil-square"></i>
+        Nuevo mensaje
+      </button>
+    </div>
+
+    <!-- Chat activo -->
+    <ng-container *ngIf="activeChatId && activeChat">
+
+      <!-- ── HEADER ── -->
+      <div class="chat-header">
+
+        <div class="chat-header-info">
+          <img
+            [src]="getChatPhoto(activeChat) || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+            class="chat-header-avatar"
+          />
+          <div>
+            <div class="chat-header-name">{{ getChatName(activeChat) }}</div>
+            <div class="chat-header-sub" *ngIf="activeChat.type === 'group'">
+              {{ activeChat.members.length }} miembros
+            </div>
+            <div class="chat-header-sub" *ngIf="activeChat.type === 'dm'">
+              Activo recientemente
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-header-actions">
+
+          <button class="icon-btn" (click)="startCall('audio')">
+            <i class="bi bi-telephone"></i>
+          </button>
+
+          <button class="icon-btn" (click)="startCall('video')">
+            <i class="bi bi-camera-video"></i>
+          </button>
+
+          <!-- Menú 3 puntos header -->
+          <div class="chat-menu-wrapper">
+            <button
+              class="icon-btn"
+              (click)="toggleChatMenu($event)"
+              title="Más opciones"
+            >
+              <i class="bi bi-three-dots-vertical"></i>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── BARRA DE BÚSQUEDA EN CHAT ── -->
+      <div class="chat-search-bar" *ngIf="showChatSearch">
+
+        <i class="bi bi-search"></i>
+
+        <input
+          type="text"
+          placeholder="Buscar en la conversación..."
+          [(ngModel)]="chatSearchQuery"
+          (input)="searchInChat()"
+          autofocus
+        />
+
+        <span class="search-count" *ngIf="chatSearchResults.length > 0">
+          {{ chatSearchIndex + 1 }} / {{ chatSearchResults.length }}
+        </span>
+
+        <button class="icon-btn-sm" (click)="jumpToSearchResult(chatSearchIndex - 1)" [disabled]="!chatSearchResults.length">
+          <i class="bi bi-chevron-up"></i>
+        </button>
+
+        <button class="icon-btn-sm" (click)="jumpToSearchResult(chatSearchIndex + 1)" [disabled]="!chatSearchResults.length">
+          <i class="bi bi-chevron-down"></i>
+        </button>
+
+        <button class="icon-btn-sm" (click)="showChatSearch = false; chatSearchQuery = ''; chatSearchResults = []">
+          <i class="bi bi-x-lg"></i>
+        </button>
+
+      </div>
+
+      <!-- ── MENSAJES ── -->
+      <div class="messages-area">
+
+        <div *ngIf="isLoading" class="loading-msgs">
+          <div class="spinner-chat"></div>
+        </div>
+
+        <ng-container *ngFor="let msg of messages; let i = index">
+
+          <div class="date-separator" *ngIf="shouldShowDate(i)">
+            <span>{{ formatDate(msg.createdAt) }}</span>
+          </div>
+
+          <div
+            class="message-row"
+            [class.mine]="isMine(msg)"
+            [class.theirs]="!isMine(msg)"
+            [class.selected-msg]="selectedMessageIds.has(msg.id || '')"
+            [id]="'msg-' + msg.id"
+            (contextmenu)="!selectingMessages && openContextMenu($event, msg)"
+            (click)="selectingMessages ? toggleSelectMessage(msg.id || '') : null"
+          >
+
+            <img
+              *ngIf="!isMine(msg) && shouldShowAvatar(i)"
+              [src]="partnerProfiles[msg.senderId]?.photoURL || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+              class="msg-avatar"
+            />
+
+            <div *ngIf="!isMine(msg) && !shouldShowAvatar(i)" class="avatar-spacer"></div>
+
+            <div class="bubble-wrap">
+
+              <div
+                class="sender-name"
+                *ngIf="activeChat.type === 'group' && !isMine(msg) && shouldShowAvatar(i)"
+              >
+                {{ getDisplayName(msg.senderId) }}
+              </div>
+
+              <div class="reply-preview" *ngIf="msg.replyTo">
+                <div class="reply-line"></div>
+                <div class="reply-content">
+                  <b>{{ msg.replyTo.senderName }}</b>
+                  <span>{{ msg.replyTo.text }}</span>
+                </div>
+              </div>
+
+              <div class="bubble deleted" *ngIf="msg.deleted">
+                <i class="bi bi-slash-circle"></i>
+                {{ isMine(msg) ? 'Eliminaste este mensaje' : 'Este mensaje fue eliminado' }}
+              </div>
+
+              <div class="edit-inline" *ngIf="editingMessageId === msg.id">
+                <textarea [(ngModel)]="editingText" rows="2" class="edit-textarea"></textarea>
+                <div class="edit-actions">
+                  <button class="btn-edit-save" (click)="saveEdit()">Guardar</button>
+                  <button class="btn-edit-cancel" (click)="cancelEdit()">Cancelar</button>
+                </div>
+              </div>
+
+              <div
+                class="bubble"
+                *ngIf="!msg.deleted && editingMessageId !== msg.id"
+                [class.emoji-only]="msg.type === 'emoji'"
+              >
+                <span *ngIf="msg.text">{{ msg.text }}</span>
+
+                <img *ngIf="msg.imageURL && !msg.viewOnce" [src]="msg.imageURL" class="msg-image" />
+
+                <div *ngIf="msg.imageURL && msg.viewOnce" class="view-once-box" (click)="openViewOnceMedia(msg)">
+                  <i class="bi bi-eye"></i>
+                  <span *ngIf="!isViewOnceViewed(msg)">Ver foto</span>
+                  <span *ngIf="isViewOnceViewed(msg)">Foto expirada</span>
+                </div>
+
+                <audio *ngIf="msg.audioURL" controls class="msg-audio">
+                  <source [src]="msg.audioURL" type="audio/webm">
+                </audio>
+
+                <a *ngIf="msg.fileURL" [href]="msg.fileURL" target="_blank" class="msg-file">
+                  <i class="bi bi-file-earmark"></i>
+                  <div>
+                    <div>{{ msg.fileName }}</div>
+                    <small>{{ formatFileSize(msg.fileSize) }}</small>
+                  </div>
+                </a>
+
+                <a *ngIf="msg.location" [href]="getLocationLink(msg.location.lat, msg.location.lng)" target="_blank" class="msg-location">
+                  <img [src]="getMapUrl(msg.location.lat, msg.location.lng)" class="location-map" />
+                  <span><i class="bi bi-geo-alt-fill"></i> Ver ubicación</span>
+                </a>
+
+                <img *ngIf="msg.gifURL"     [src]="msg.gifURL"     class="msg-gif"     />
+                <img *ngIf="msg.stickerURL" [src]="msg.stickerURL" class="msg-sticker" />
+
+                <span class="edited-tag" *ngIf="msg.edited">(editado)</span>
+              </div>
+
+              <div class="msg-meta" [class.deleted-meta]="msg.deleted">
+                <span class="msg-time">{{ formatTime(msg.createdAt) }}</span>
+                <span class="msg-status" *ngIf="isMine(msg) && !msg.deleted">
+                  <i class="bi bi-check2-all" [class.read]="isRead(msg)"></i>
+                </span>
+              </div>
+
+              <div class="reactions-row" *ngIf="getReactionEntries(msg.reactions).length > 0">
+                <span
+                  class="reaction-badge"
+                  *ngFor="let r of getReactionEntries(msg.reactions)"
+                >
+                  {{ r.emoji }} {{ r.count }}
+                </span>
+              </div>
+
+            </div>
+          </div>
+
+        </ng-container>
+
+        <div #messagesEnd></div>
+      </div>
+
+      <!-- ── RESPONDER BAR ── -->
+      <div class="reply-bar" *ngIf="replyingTo">
+        <div class="reply-info">
+          <i class="bi bi-reply-fill"></i>
+          <div>
+            <b>Respondiendo a {{ getDisplayName(replyingTo.senderId) }}</b>
+            <span>{{ replyingTo.text }}</span>
+          </div>
+        </div>
+        <button class="icon-btn" (click)="replyingTo = null">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+
+      <!-- ── INPUT ── -->
+      <div class="input-area">
+
+        <div class="attach-menu" *ngIf="showAttachMenu">
+          <button (click)="triggerImagePicker()"><i class="bi bi-image"></i> Imagen</button>
+          <button (click)="triggerFilePicker()"><i class="bi bi-file-earmark"></i> Documento</button>
+          <button (click)="sendLocation()"><i class="bi bi-geo-alt"></i> Ubicación</button>
+          <button (click)="openGifPicker()"><i class="bi bi-file-play"></i> GIF</button>
+          <button (click)="showStickerPicker = true"><i class="bi bi-emoji-laughing"></i> Sticker</button>
+        </div>
+
+        <div class="emoji-picker" *ngIf="showEmojiPicker">
+          <span *ngFor="let e of emojiList" (click)="sendEmoji(e)" class="emoji-opt">{{ e }}</span>
+        </div>
+
+        <button class="icon-btn emoji-btn" (click)="showEmojiPicker = !showEmojiPicker">
+          <i class="bi bi-emoji-smile"></i>
+        </button>
+
+        <button class="icon-btn" (click)="showAttachMenu = !showAttachMenu">
+          <i class="bi bi-paperclip"></i>
+        </button>
+
+        <button
+          class="icon-btn"
+          [class.active]="newMessageViewOnce"
+          (click)="newMessageViewOnce = !newMessageViewOnce"
+        >
+          <i class="bi bi-eye"></i>
+        </button>
+
+        <textarea
+          #msgInput
+          class="msg-textarea"
+          placeholder="Escribe un mensaje..."
+          [(ngModel)]="newMessage"
+          (keydown)="onKeydown($event)"
+          rows="1"
+        ></textarea>
+
+        <div class="recording-indicator" *ngIf="isRecording">
+          <span class="rec-dot"></span>
+          <span class="rec-time">{{ formatRecordingTime(recordingTime) }}</span>
+          <button class="icon-btn cancel-rec-btn" (click)="cancelRecording()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <button
+          class="icon-btn mic-btn"
+          *ngIf="!newMessage.trim() && !isSending"
+          [class.recording]="isRecording"
+          (click)="isRecording ? stopRecording() : startRecording()"
+          [title]="isRecording ? 'Detener y enviar' : 'Grabar audio'"
+        >
+          <i class="bi" [ngClass]="isRecording ? 'bi-stop-fill' : 'bi-mic-fill'"></i>
+        </button>
+
+        <button
+          class="send-btn"
+          *ngIf="newMessage.trim() || isSending"
+          (click)="sendMessage()"
+          [disabled]="!newMessage.trim() || isSending"
+        >
+          <i class="bi bi-send-fill"></i>
+        </button>
+
+      </div>
+
+    </ng-container>
+
+    <!-- Hidden file inputs -->
+    <input #imageInput type="file" accept="image/*" hidden (change)="onImageSelected($event)" />
+    <input #fileInput  type="file" hidden           (change)="onFileSelected($event)"    />
+    <input #audioInput type="file" accept="audio/*" hidden (change)="onAudioFileSelected($event)" />
+
+  </main>
+</div>
+
+<!-- ═══════════════ CONTEXT MENU ═══════════════════════════════ -->
+<div
+  class="context-menu"
+  *ngIf="contextMenuMsg"
+  [style.left.px]="contextMenuX"
+  [style.top.px]="contextMenuY"
+  (click)="$event.stopPropagation()"
+>
+  <div class="quick-reactions">
+    <span *ngFor="let e of quickEmojis" (click)="react(contextMenuMsg, e)" class="quick-emoji">{{ e }}</span>
+  </div>
+  <div class="ctx-divider"></div>
+  <div class="ctx-item" (click)="replyTo(contextMenuMsg)"><i class="bi bi-reply"></i> Responder</div>
+  <div class="ctx-item" *ngIf="isMine(contextMenuMsg) && !contextMenuMsg.deleted" (click)="startEdit(contextMenuMsg)">
+    <i class="bi bi-pencil"></i> Editar
+  </div>
+  <div class="ctx-item danger" *ngIf="isMine(contextMenuMsg)" (click)="deleteMsg(contextMenuMsg)">
+    <i class="bi bi-trash"></i> Eliminar
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL GRUPO (2 pasos) ══════════════════════ -->
+<div class="modal-overlay" *ngIf="showGroupModal" (click)="closeGroupModal()">
+  <div class="group-modal" (click)="$event.stopPropagation()">
+
+    <!-- PASO 1: buscar y seleccionar miembros -->
+    <ng-container *ngIf="groupStep === 1">
+
+      <div class="modal-header">
+        <h3><i class="bi bi-people-fill"></i> Nuevo grupo</h3>
+        <button class="icon-btn-sm" (click)="closeGroupModal()"><i class="bi bi-x-lg"></i></button>
+      </div>
+
+      <p class="modal-subtitle">Añade los participantes del grupo</p>
+
+      <!-- Chips de seleccionados -->
+      <div class="selected-chips" *ngIf="selectedMembers.length > 0">
+        <div class="chip" *ngFor="let m of selectedMembers" (click)="toggleMember(m)">
+          <img [src]="m.photoURL || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'" />
+          <span>{{ m.displayName }}</span>
+          <i class="bi bi-x"></i>
+        </div>
+      </div>
+
+      <!-- Búsqueda -->
+      <div class="search-user-box">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          placeholder="Buscar usuario..."
+          [(ngModel)]="groupSearchQuery"
+          (input)="searchGroupUsers()"
+        />
+      </div>
+
+      <div class="user-results">
+        <div *ngIf="isSearchingGroupUsers" class="searching-hint">
+          <div class="mini-spinner"></div> Buscando...
+        </div>
+        <div
+          class="user-result-item"
+          *ngFor="let u of groupSearchResults"
+          [class.selected]="isMemberSelected(u)"
+          (click)="toggleMember(u)"
+        >
+          <img [src]="u.photoURL || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'" class="user-avatar-sm" />
+          <div class="user-info-sm">
+            <span class="user-name-sm">{{ u.displayName }}</span>
+            <span class="user-career-sm">{{ u.career || u.area || '' }}</span>
+          </div>
+          <i class="bi bi-check-circle-fill check-icon" *ngIf="isMemberSelected(u)"></i>
+        </div>
+        <div *ngIf="!isSearchingGroupUsers && groupSearchResults.length === 0 && groupSearchQuery" class="no-users">
+          Sin resultados
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeGroupModal()">Cancelar</button>
+        <button
+          class="btn-primary"
+          [disabled]="selectedMembers.length === 0"
+          (click)="goToGroupStep2()"
+        >
+          Siguiente <i class="bi bi-arrow-right"></i>
+        </button>
+      </div>
+
+    </ng-container>
+
+    <!-- PASO 2: nombre del grupo y crear -->
+    <ng-container *ngIf="groupStep === 2">
+
+      <div class="modal-header">
+        <button class="icon-btn-sm" (click)="backToGroupStep1()"><i class="bi bi-arrow-left"></i></button>
+        <h3>Detalles del grupo</h3>
+        <button class="icon-btn-sm" (click)="closeGroupModal()"><i class="bi bi-x-lg"></i></button>
+      </div>
+
+      <!-- Avatar placeholder -->
+      <div class="group-avatar-placeholder">
+        <i class="bi bi-camera"></i>
+        <span>Foto del grupo</span>
+      </div>
+
+      <!-- Nombre -->
+      <div class="group-name-field">
+        <label>Nombre del grupo</label>
+        <input
+          type="text"
+          placeholder="Ej: Proyecto Final 2025"
+          [(ngModel)]="groupName"
+          maxlength="50"
+        />
+        <span class="char-count">{{ groupName.length }}/50</span>
+      </div>
+
+      <!-- Miembros seleccionados (resumen) -->
+      <div class="members-summary">
+        <span class="members-label">
+          <i class="bi bi-people"></i>
+          {{ selectedMembers.length + 1 }} participantes
+        </span>
+        <div class="members-avatars">
+          <img
+            *ngFor="let m of selectedMembers"
+            [src]="m.photoURL || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+            class="member-thumb"
+            [title]="m.displayName"
+          />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="backToGroupStep1()">Atrás</button>
+        <button
+          class="btn-primary"
+          [disabled]="!groupName.trim()"
+          (click)="createGroup()"
+        >
+          <i class="bi bi-people-fill"></i>
+          Crear grupo
+        </button>
+      </div>
+
+    </ng-container>
+
+  </div>
+</div>
+
+<!-- ═══════════════ VIEW ONCE MODAL ════════════════════════════ -->
+<div class="modal-overlay" *ngIf="showViewOnceModal" (click)="showViewOnceModal = false">
+  <div class="view-once-modal">
+    <img *ngIf="viewOnceTargetMsg?.imageURL" [src]="viewOnceTargetMsg?.imageURL" class="view-once-img" />
+    <audio *ngIf="viewOnceTargetMsg?.audioURL" controls autoplay>
+      <source [src]="viewOnceTargetMsg?.audioURL">
+    </audio>
+  </div>
+</div>
+
+<!-- ═══════════════ GIF PICKER ═════════════════════════════════ -->
+<div class="gif-picker" *ngIf="showGifPicker">
+  <input type="text" placeholder="Buscar GIF..." [(ngModel)]="gifSearchQuery" (input)="searchGifs()" />
+  <div class="gif-grid">
+    <img *ngFor="let gif of gifResults" [src]="gif.images.fixed_height.url" (click)="sendGif(gif)" />
+  </div>
+</div>
+
+<!-- ═══════════════ STICKERS ═══════════════════════════════════ -->
+<div class="sticker-picker" *ngIf="showStickerPicker">
+  <div *ngFor="let category of stickerCategories">
+    <h4>{{ category.label }}</h4>
+    <div class="sticker-grid">
+      <img *ngFor="let sticker of category.stickers" [src]="sticker" (click)="sendSticker(sticker)" />
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ VIDEOLLAMADA ═══════════════════════════════ -->
+<div class="call-overlay" *ngIf="activeCall">
+  <video #remoteVideo autoplay playsinline class="remote-video"></video>
+  <video #localVideo  autoplay muted playsinline class="local-video"></video>
+  <div class="call-controls">
+    <button (click)="toggleMicrophone()"><i class="bi bi-mic"></i></button>
+    <button (click)="toggleCamera()"><i class="bi bi-camera-video"></i></button>
+    <button class="end-call" (click)="endCall()"><i class="bi bi-telephone-x"></i></button>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL ELIMINAR MENSAJE ════════════════════ -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="showDeleteModal = false">
+  <div class="delete-modal" (click)="$event.stopPropagation()">
+    <h3>Eliminar mensaje</h3>
+    <p>¿Cómo quieres eliminar este mensaje?</p>
+    <div class="delete-actions">
+      <button class="btn-delete-me"  (click)="deleteForMe()"><i class="bi bi-person"></i> Eliminar para mí</button>
+      <button class="btn-delete-all" *ngIf="deleteTargetMsg && isMine(deleteTargetMsg)" (click)="deleteForAll()">
+        <i class="bi bi-trash"></i> Eliminar para todos
+      </button>
+      <button class="btn-cancel" (click)="showDeleteModal = false">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ DROPDOWN SIDEBAR (fuera del sidebar para evitar overflow:hidden) ══ -->
+<div
+  class="dropdown-fixed"
+  *ngIf="showSidebarMenu"
+  (click)="$event.stopPropagation()"
+>
+  <div class="dropdown-item" (click)="openNewGroup()">
+    <i class="bi bi-people-fill"></i> Nuevo grupo
+  </div>
+  <div class="dropdown-item" (click)="showSidebarMenu = false">
+    <i class="bi bi-star"></i> Mensajes destacados
+  </div>
+  <div class="dropdown-item" (click)="showSidebarMenu = false">
+    <i class="bi bi-check2-square"></i> Seleccionar chats
+  </div>
+  <div class="dropdown-item" (click)="markAllAsRead()">
+    <i class="bi bi-envelope-open"></i> Marcar todos como leídos
+  </div>
+  <div class="dropdown-divider"></div>
+  <div class="dropdown-item" (click)="showSidebarMenu = false">
+    <i class="bi bi-lock"></i> Bloqueo de aplicación
+  </div>
+</div>
+
+<!-- ═══════════════ DROPDOWN HEADER CHAT (fuera del main para evitar clipping) ══════ -->
+<div
+  class="dropdown-fixed dropdown-fixed--right"
+  *ngIf="showChatMenu"
+  (click)="$event.stopPropagation()"
+>
+  <div class="dropdown-item" (click)="openContactInfo()">
+    <i class="bi bi-person-circle"></i> Info. del contacto
+  </div>
+  <div class="dropdown-item" (click)="openChatSearch()">
+    <i class="bi bi-search"></i> Buscar
+  </div>
+  <div class="dropdown-item" (click)="toggleSelectMessages()">
+    <i class="bi bi-check2-square"></i> Seleccionar mensajes
+  </div>
+  <div class="dropdown-item" (click)="openTemporalModal()">
+    <i class="bi bi-clock-history"></i> Mensajes temporales
+  </div>
+  <div class="dropdown-item" (click)="toggleFavorite()">
+    <i class="bi bi-heart{{ isFavorite() ? '-fill' : '' }}"></i>
+    {{ isFavorite() ? 'Quitar de favoritos' : 'Añadir a favoritos' }}
+  </div>
+  <div class="dropdown-item" (click)="openListModal()">
+    <i class="bi bi-list-ul"></i> Añadir a la lista
+  </div>
+  <div class="dropdown-divider"></div>
+  <div class="dropdown-item danger" (click)="openClearChatModal()">
+    <i class="bi bi-eraser"></i> Vaciar chat
+  </div>
+  <div class="dropdown-item danger" *ngIf="activeChat?.type === 'group'" (click)="openLeaveGroupModal()">
+    <i class="bi bi-box-arrow-right"></i> Salir del grupo
+  </div>
+  <div class="dropdown-item danger" *ngIf="isGroupAdmin" (click)="openDeleteGroupModal()">
+    <i class="bi bi-trash3"></i> Eliminar grupo
+  </div>
+  <div class="dropdown-item danger" *ngIf="activeChat?.type !== 'group'" (click)="openDeleteChatModal()">
+    <i class="bi bi-trash"></i> Eliminar chat
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL INFO CONTACTO ════════════════════ -->
+<div class="modal-overlay" *ngIf="showContactInfo" (click)="showContactInfo = false">
+  <div class="info-modal" (click)="$event.stopPropagation()">
+
+    <div class="info-modal-header">
+      <button class="icon-btn-sm" (click)="showContactInfo = false">
+        <i class="bi bi-x-lg"></i>
+      </button>
+      <h3>Info. del contacto</h3>
+    </div>
+
+    <div class="info-modal-body" *ngIf="contactInfoUser">
+      <img
+        [src]="contactInfoUser.photoURL || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+        class="info-avatar"
+      />
+      <h4 class="info-name">{{ contactInfoUser.displayName }}</h4>
+      <p class="info-career">{{ contactInfoUser.career || contactInfoUser.area || '' }}</p>
+
+      <div class="info-row" *ngIf="contactInfoUser.email">
+        <i class="bi bi-envelope"></i>
+        <div>
+          <span class="info-label">Correo</span>
+          <span class="info-value">{{ contactInfoUser.email }}</span>
+        </div>
+      </div>
+
+      <div class="info-row" *ngIf="contactInfoUser.bio">
+        <i class="bi bi-chat-quote"></i>
+        <div>
+          <span class="info-label">Bio</span>
+          <span class="info-value">{{ contactInfoUser.bio }}</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL MENSAJES TEMPORALES ══════════════ -->
+<div class="modal-overlay" *ngIf="showTemporalModal" (click)="showTemporalModal = false">
+  <div class="simple-modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h3><i class="bi bi-clock-history"></i> Mensajes temporales</h3>
+      <button class="icon-btn-sm" (click)="showTemporalModal = false">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <p class="modal-subtitle">Los mensajes se eliminarán automáticamente después del tiempo seleccionado.</p>
+
+    <div class="temporal-options">
+      <label
+        class="temporal-option"
+        *ngFor="let opt of temporalOptions"
+        [class.active]="selectedTemporal === opt.value"
+        (click)="selectedTemporal = opt.value"
+      >
+        <span class="temporal-radio">
+          <i class="bi" [ngClass]="selectedTemporal === opt.value ? 'bi-record-circle-fill' : 'bi-circle'"></i>
+        </span>
+        {{ opt.label }}
+      </label>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="showTemporalModal = false">Cancelar</button>
+      <button class="btn-primary" (click)="saveTemporalMessages()">Guardar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL AÑADIR A LISTA ══════════════════ -->
+<div class="modal-overlay" *ngIf="showListModal" (click)="showListModal = false">
+  <div class="simple-modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h3><i class="bi bi-list-ul"></i> Añadir a la lista</h3>
+      <button class="icon-btn-sm" (click)="showListModal = false">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="temporal-options">
+      <label
+        class="temporal-option"
+        *ngFor="let opt of listOptions"
+        [class.active]="selectedList === opt"
+        (click)="selectedList = opt"
+      >
+        <span class="temporal-radio">
+          <i class="bi" [ngClass]="selectedList === opt ? 'bi-record-circle-fill' : 'bi-circle'"></i>
+        </span>
+        {{ opt }}
+      </label>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="showListModal = false">Cancelar</button>
+      <button class="btn-primary" (click)="saveList()">Guardar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ BARRA SELECCIONAR MENSAJES ════════════ -->
+<div class="select-bar" *ngIf="selectingMessages">
+  <span>{{ selectedMessageIds.size }} seleccionados</span>
+  <div class="select-bar-actions">
+    <button class="icon-btn-sm" (click)="deleteSelectedMessages()" [disabled]="!selectedMessageIds.size" title="Eliminar">
+      <i class="bi bi-trash"></i>
+    </button>
+    <button class="icon-btn-sm" (click)="toggleSelectMessages()" title="Cancelar">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL VACIAR CHAT ════════════════════════ -->
+<div class="modal-overlay" *ngIf="showClearChatModal" (click)="showClearChatModal = false">
+  <div class="delete-modal" (click)="$event.stopPropagation()">
+    <h3>Vaciar chat</h3>
+    <p>Se eliminarán todos los mensajes de esta conversación para ti.</p>
+    <div class="delete-actions">
+      <button class="btn-delete-all" (click)="clearChat()"><i class="bi bi-eraser"></i> Vaciar</button>
+      <button class="btn-cancel" (click)="showClearChatModal = false">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL ELIMINAR CHAT ═════════════════════ -->
+<div class="modal-overlay" *ngIf="showDeleteChatModal" (click)="showDeleteChatModal = false">
+  <div class="delete-modal" (click)="$event.stopPropagation()">
+    <h3>Eliminar chat</h3>
+    <p>Se eliminará esta conversación de tu lista.</p>
+    <div class="delete-actions">
+      <button class="btn-delete-all" (click)="deleteChat()"><i class="bi bi-trash"></i> Eliminar</button>
+      <button class="btn-cancel" (click)="showDeleteChatModal = false">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL SALIR DEL GRUPO ═════════════════════ -->
+<div class="modal-overlay" *ngIf="showLeaveGroupModal" (click)="showLeaveGroupModal = false">
+  <div class="delete-modal" (click)="$event.stopPropagation()">
+    <h3>Salir del grupo</h3>
+    <p>Dejarás de ser miembro de este grupo y no podrás ver sus mensajes.</p>
+    <div class="delete-actions">
+      <button class="btn-delete-all" (click)="leaveGroup()"><i class="bi bi-box-arrow-right"></i> Salir</button>
+      <button class="btn-cancel" (click)="showLeaveGroupModal = false">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL ELIMINAR GRUPO PERMANENTEMENTE ═════════════════════ -->
+<div class="modal-overlay" *ngIf="showDeleteGroupModal" (click)="showDeleteGroupModal = false">
+  <div class="delete-modal" (click)="$event.stopPropagation()">
+    <h3>Eliminar grupo</h3>
+    <p>Esta acción es permanente: se borrará el grupo y todos sus mensajes para <strong>todos</strong> los miembros. No se puede deshacer.</p>
+    <div class="delete-actions">
+      <button class="btn-delete-all" (click)="deleteGroupPermanently()"><i class="bi bi-trash3"></i> Eliminar definitivamente</button>
+      <button class="btn-cancel" (click)="showDeleteGroupModal = false">Cancelar</button>
+    </div>
+  </div>
+</div>

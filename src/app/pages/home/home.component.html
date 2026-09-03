@@ -1,0 +1,73 @@
+<!-- 🔓 USUARIO NO LOGUEADO -->
+<div class="home" *ngIf="!(user$ | async); else loggedIn">
+
+  <div class="hero">
+    <div class="hero-content">
+      <h1>Conecta con tu campus 🚀</h1>
+      <p>
+        Comparte ideas, haz amigos, publica contenido y vive la experiencia
+        universitaria en una sola plataforma.
+      </p>
+
+      <div class="actions">
+        <a routerLink="/login" class="btn primary">Iniciar sesión</a>
+      </div>
+    </div>
+
+    <div class="hero-image">
+      <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="features">
+    <div class="feature-card">
+      <i class="bi bi-people"></i>
+      <h3>Conecta</h3>
+      <p>Encuentra y agrega amigos dentro de la universidad.</p>
+    </div>
+
+    <div class="feature-card">
+      <i class="bi bi-chat-dots"></i>
+      <h3>Interactúa</h3>
+      <p>Comenta, reacciona y comparte publicaciones.</p>
+    </div>
+
+    <div class="feature-card">
+      <i class="bi bi-camera-video"></i>
+      <h3>Contenido</h3>
+      <p>Publica fotos, videos y momentos importantes.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- 🔐 USUARIO LOGUEADO -->
+<ng-template #loggedIn>
+  <div class="dashboard">
+
+    <div class="welcome-card">
+      <h2>Hola {{ (user$ | async)?.displayName }} 👋</h2>
+      <p>Listo para ver lo nuevo en tu campus</p>
+      <a routerLink="/feed" class="btn primary">Ir al feed</a>
+    </div>
+
+    <div class="quick-actions">
+      <div class="action" routerLink="/friends">
+        <i class="bi bi-people"></i>
+        <span>Amigos</span>
+      </div>
+
+      <div class="action" routerLink="/reels">
+        <i class="bi bi-camera-video"></i>
+        <span>Reels</span>
+      </div>
+
+      <div class="action" routerLink="/profile">
+        <i class="bi bi-person"></i>
+        <span>Perfil</span>
+      </div>
+    </div>
+
+  </div>
+</ng-template>

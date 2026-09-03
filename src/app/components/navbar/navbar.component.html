@@ -1,0 +1,202 @@
+<nav class="navbar" *ngIf="shouldShowNavbar">
+
+  <!-- IZQUIERDA -->
+  <div class="logo" (click)="go('/feed')">Campus Social</div>
+
+  <!-- CENTRO -->
+  <div class="search-box">
+
+  <i class="bi bi-search search-icon"></i>
+
+  <input
+    type="text"
+    placeholder="Buscar usuarios o publicaciones..."
+    [(ngModel)]="query"
+    (input)="onSearch()"
+    (focus)="showDropdown = true"
+    (blur)="onBlur()"
+  >
+
+  <!-- DROPDOWN -->
+  <div class="search-results" *ngIf="showDropdown && query.trim().length > 0">
+
+    <div class="no-results" *ngIf="results.length === 0 && !isSearching">
+      <i class="bi bi-search"></i>
+      <span>No se encontró "{{ query }}"</span>
+    </div>
+
+    <!-- 🔥 LOADER -->
+    <div class="search-loading" *ngIf="isSearching">
+      <div class="spinner"></div>
+      <span>Buscando...</span>
+    </div>
+
+    <ng-container *ngIf="!isSearching">
+
+      <!-- USUARIOS -->
+      <div class="result-group-label" *ngIf="userResults.length > 0">Personas</div>
+
+      <div
+        class="result-item"
+        *ngFor="let r of userResults"
+        (mousedown)="go(r.route)"
+      >
+        <img
+          [src]="r.photoURL || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+          class="result-avatar"
+        >
+
+        <div class="result-info">
+          <span class="result-name">{{ r.name }}</span>
+          <span class="result-type">Usuario</span>
+        </div>
+
+        <i class="bi bi-person"></i>
+      </div>
+
+      <!-- POSTS -->
+      <div class="result-group-label" *ngIf="postResults.length > 0">
+        Publicaciones
+      </div>
+
+      <div
+        class="result-item"
+        *ngFor="let r of postResults"
+        (mousedown)="go(r.route)"
+      >
+        <div class="result-info">
+          <span class="result-name">{{ r.name }}</span>
+          <span class="result-type">Publicación</span>
+        </div>
+
+        <i class="bi bi-file-text"></i>
+      </div>
+
+      <!-- REELS -->
+      <div class="result-group-label" *ngIf="reelResults.length > 0">
+        Reels
+      </div>
+
+      <div
+        class="result-item"
+        *ngFor="let r of reelResults"
+        (mousedown)="go(r.route)"
+      >
+        <div class="result-avatar reel-avatar">🎥</div>
+
+        <div class="result-info">
+          <span class="result-name">
+            {{ r.name || 'Reel sin descripción' }}
+          </span>
+
+          <span class="result-type">Reel</span>
+        </div>
+
+        <i class="bi bi-play-circle"></i>
+      </div>
+
+    </ng-container>
+  </div>
+</div>
+
+  <!-- DERECHA -->
+  <div class="nav-right">
+
+    <div class="nav-center">
+      <i class="bi bi-house-door" (click)="go('/feed')"></i>
+      <i class="bi bi-camera-video" (click)="go('/reels')"></i>
+      <i class="bi bi-people" (click)="go('/friends')"></i>
+      <!-- ─── CHAT ─── -->
+      <div class="notification-wrapper">
+        <i class="bi bi-chat-dots" (click)="go('/chat')" title="Mensajes"></i>
+        <span class="notification-badge" *ngIf="(unreadChatsCount$ | async) as count">
+          {{ (count ?? 0) > 99 ? '99+' : (count ?? 0) }}
+        </span>
+      </div>
+<div class="notification-wrapper">
+
+  <i
+    class="bi bi-bell"
+    (click)="showNotifications = !showNotifications">
+
+  </i>
+
+  <span
+    class="notification-badge"
+    *ngIf="notifications.length > 0">
+
+{{ unreadNotificationsCount }}
+  </span>
+
+  <div
+    class="notifications-panel"
+    *ngIf="showNotifications">
+
+    <div
+  class="notification-item"
+  [class.unread]="!n.read"
+  *ngFor="let n of notifications"
+  (click)="openNotification(n)">
+
+      <img
+        [src]="n.fromAvatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+        class="notif-avatar">
+
+      <div class="notif-content">
+
+        <b>{{ n.fromName }}</b>
+
+        <span *ngIf="n.type === 'comment'">
+          comentó tu publicación
+        </span>
+
+        <span *ngIf="n.type === 'reaction'">
+          reaccionó a tu publicación
+        </span>
+
+      </div>
+
+    </div>
+
+    <div
+      class="no-results"
+      *ngIf="notifications.length === 0">
+
+      No tienes notificaciones
+
+    </div>
+
+  </div>
+
+</div>      <i class="bi bi-microsoft" (click)="openTeams()"></i>
+      <i class="bi bi-mortarboard" (click)="openMoodle()"></i>
+    </div>
+
+    <ng-container *ngIf="user$ | async as user">
+      <div class="user-section" (click)="toggleMenu()">
+
+        <img
+          *ngIf="user.photoURL && !avatarError"
+          [src]="user.photoURL"
+          class="avatar"
+          (error)="avatarError = true"
+        >
+
+        <div
+          *ngIf="!user.photoURL || avatarError"
+          class="avatar avatar-initial"
+        >
+          {{ getInitial(user.displayName) }}
+        </div>
+
+        <div class="menu" *ngIf="isMenuOpen">
+          <div class="menu-item" (click)="go('/profile')">Mi perfil</div>
+          <div class="menu-item" (click)="go('/saved')">Guardados</div>
+          <div class="menu-item logout" (click)="logout()">Cerrar sesión</div>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+
+</nav>

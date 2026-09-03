@@ -1,0 +1,343 @@
+@use '../../../styles/mixins' as m;
+
+/* ============================================================
+   NAVBAR — estilo propio (Campus Social)
+   Depende de: styles/_tokens.scss + styles/_mixins.scss
+   La barra conserva el color de marca (gradiente institucional)
+   en ambos temas; los desplegables sí siguen claro/oscuro.
+   ============================================================ */
+
+.navbar {
+  width: 100%;
+  background: var(--brand-gradient);
+  color: var(--text-on-brand);
+  padding: 10px 18px;
+
+  display: flex;
+  align-items: center;
+
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.18);
+
+  .logo {
+    font-size: 20px;
+    font-weight: bold;
+    font-family: var(--font-display);
+    flex: 1;
+    cursor: pointer;
+  }
+
+  /* ─── Buscador central ─── */
+  .search-box {
+    flex: 2;
+    display: flex;
+    justify-content: center;
+    position: relative;
+
+    input {
+      width: 420px;
+      padding: 10px 14px 10px 38px;
+      border: none;
+      border-radius: var(--r-pill);
+      outline: none;
+      font-size: 14px;
+      background: var(--surface-alt);
+      color: var(--text-primary);
+      transition: background .18s ease, box-shadow .18s ease;
+      @include m.focus-ring;
+
+      &::placeholder { color: var(--text-muted); }
+
+      &:focus {
+        background: var(--surface);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-on-brand) 35%, transparent);
+      }
+    }
+
+    .search-icon {
+      position: absolute;
+      left: calc(50% - 195px);
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      font-size: 14px;
+      z-index: 5;
+    }
+
+    .search-results {
+      position: absolute;
+      top: 52px;
+      width: 420px;
+      background: var(--surface-alt);
+      color: var(--text-primary);
+      border-radius: var(--r-lg);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
+      max-height: 420px;
+      overflow-y: auto;
+      z-index: 3000;
+      border: 1px solid var(--border-subtle);
+      animation: fadeIn 0.15s ease;
+      @include m.themed-scrollbar;
+    }
+
+    /* 🏷️ Etiquetas */
+    .result-group-label {
+      padding: 10px 14px 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--brand-blue-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: color-mix(in srgb, var(--brand-blue-light) 10%, var(--surface-alt));
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* Resultado */
+    .result-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+
+      &:hover { background: color-mix(in srgb, var(--brand-blue-light) 8%, transparent); }
+
+      .result-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+        border: 1px solid var(--border-subtle);
+      }
+
+      .reel-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: color-mix(in srgb, var(--brand-blue-light) 16%, transparent);
+        font-size: 18px;
+      }
+
+      .result-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+
+        .result-name {
+          font-size: 14px;
+          font-weight: 600;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          color: var(--text-primary);
+        }
+
+        .result-type {
+          font-size: 12px;
+          color: var(--text-secondary);
+        }
+      }
+
+      i {
+        color: var(--text-muted);
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+    }
+
+    /* Estados */
+    .no-results {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 18px 14px;
+      color: var(--text-secondary);
+      font-size: 13px;
+
+      i { color: var(--brand-blue-light); font-size: 15px; }
+    }
+  }
+
+  /* ─── Iconos centrales ─── */
+  .nav-center {
+    display: flex;
+    gap: 26px;
+    font-size: 22px;
+
+    i {
+      cursor: pointer;
+      transition: transform 0.15s ease;
+
+      &:hover { transform: scale(1.1); }
+    }
+  }
+
+  .nav-right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 20px;
+  }
+
+  /* ─── Usuario ─── */
+  .user-section {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2px solid var(--text-on-brand);
+      object-fit: cover;
+    }
+
+    .avatar-initial {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--brand-gold);
+      color: var(--brand-blue-dark);
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .menu {
+      position: absolute;
+      right: 0;
+      top: 48px;
+      background: var(--surface-alt);
+      color: var(--text-primary);
+      width: 160px;
+      border-radius: var(--r-md);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+
+      .menu-item {
+        padding: 12px 14px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.1s ease;
+
+        &:hover { background: color-mix(in srgb, var(--brand-blue-light) 10%, transparent); }
+
+        &.logout { color: var(--danger); font-weight: 600; }
+      }
+    }
+  }
+}
+
+/* ─── Notificaciones (dropdown embebido en el navbar) ─── */
+.notification-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: var(--danger);
+  color: var(--text-on-brand);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: var(--r-pill);
+  min-width: 16px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.notifications-panel {
+  position: absolute;
+  top: 40px;
+  right: -10px;
+  width: 320px;
+  max-height: 420px;
+  overflow-y: auto;
+  background: var(--surface-alt);
+  color: var(--text-primary);
+  border-radius: var(--r-lg);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
+  border: 1px solid var(--border-subtle);
+  z-index: 3000;
+  animation: fadeIn 0.15s ease;
+  @include m.themed-scrollbar;
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background .15s ease;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: color-mix(in srgb, var(--brand-blue-light) 8%, transparent); }
+
+  &.unread {
+    background: color-mix(in srgb, var(--brand-blue-light) 10%, transparent);
+    &:hover { background: color-mix(in srgb, var(--brand-blue-light) 16%, transparent); }
+  }
+
+  .notif-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .notif-content {
+    flex: 1;
+    font-size: 13.5px;
+    color: var(--text-primary);
+    line-height: 1.4;
+
+    b { font-weight: 700; }
+    span { color: var(--text-secondary); }
+  }
+}
+
+/* 🔥 LOADER */
+.search-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-subtle);
+  border-top: 2px solid var(--brand-blue-light);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

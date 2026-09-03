@@ -1,0 +1,263 @@
+@use '../../../styles/mixins' as m;
+
+/* ============================================================
+   PERFIL DE OTRO USUARIO — estilo propio neumórfico (Campus Social)
+   Depende de: styles/_tokens.scss + styles/_mixins.scss
+   ============================================================ */
+
+.user-profile-page {
+  max-width: 720px;
+  margin: 20px auto;
+  padding-bottom: 40px;
+  color: var(--text-primary);
+}
+
+/* ─── Estados (loading / error) ─── */
+.state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  gap: 12px;
+  color: var(--text-secondary);
+
+  i { font-size: 42px; color: var(--brand-blue-light); }
+  p { font-size: 15px; }
+
+  button {
+    @include m.brand-button(var(--r-pill));
+    padding: 8px 18px;
+  }
+}
+
+/* ─── Portada ─── */
+.cover {
+  width: 100%;
+  height: 260px;
+  border-radius: var(--r-lg);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 60px; // espacio para avatar flotante
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.back-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(15, 18, 28, 0.55);
+  backdrop-filter: blur(4px);
+  color: var(--text-on-brand);
+  border: none;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background .18s ease;
+  @include m.focus-ring;
+
+  &:hover { background: rgba(15, 18, 28, 0.75); }
+}
+
+/* ─── Header perfil ─── */
+.profile-header {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  padding: 0 16px;
+  margin-top: -70px; // sube todo sobre la portada
+  align-items: flex-end;
+
+  .avatar {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 5px solid var(--surface-alt);
+    object-fit: cover;
+    background: var(--surface-alt);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  }
+
+  .info {
+    margin-bottom: 10px;
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      font-family: var(--font-display);
+      margin: 0;
+      color: var(--text-primary);
+    }
+
+    .career {
+      color: var(--brand-blue-light);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .friends-count {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 4px;
+    }
+
+    .bio {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .profile-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      border-radius: var(--r-sm);
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .18s ease, opacity .18s ease, filter .18s ease;
+      @include m.focus-ring;
+
+      &:disabled {
+        opacity: 0.7;
+        cursor: default;
+      }
+    }
+
+    .btn-primary {
+      @include m.brand-button(var(--r-sm));
+      padding: 8px 16px;
+    }
+
+    .btn-secondary {
+      background: var(--surface-alt);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+
+      &:hover:not(:disabled) { background: color-mix(in srgb, var(--brand-blue-light) 10%, var(--surface-alt)); }
+    }
+
+    .btn-message {
+      background: var(--surface-alt);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+
+      &:hover { background: color-mix(in srgb, var(--brand-blue-light) 10%, var(--surface-alt)); }
+    }
+  }
+}
+
+/* ─── Stats ─── */
+.stats {
+  display: flex;
+  margin: 20px 16px;
+  @include m.neu-raised(var(--r-lg));
+  overflow: hidden;
+
+  .stat {
+    flex: 1;
+    padding: 14px 0;
+    text-align: center;
+    border-right: 1px solid var(--border-subtle);
+
+    &:last-child { border-right: none; }
+
+    .num {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--brand-blue-light);
+    }
+
+    .label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+  }
+}
+
+/* ─── Secciones ─── */
+.section {
+  padding: 0 16px;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    font-family: var(--font-display);
+    color: var(--brand-blue);
+    margin-bottom: 12px;
+    border-bottom: 2px solid color-mix(in srgb, var(--brand-blue-light) 25%, transparent);
+    padding-bottom: 6px;
+  }
+}
+
+/* ─── Post card ─── */
+.post-card {
+  @include m.neu-raised(var(--r-lg));
+  @include m.lift-on-hover(-3px);
+  padding: 16px;
+  margin-bottom: 14px;
+
+  .post-content {
+    font-size: 15px;
+    color: var(--text-primary);
+    line-height: 1.5;
+    margin-bottom: 10px;
+    white-space: pre-line;
+  }
+
+  .post-image {
+    width: 100%;
+    border-radius: var(--r-md);
+    margin-top: 8px;
+    object-fit: cover;
+    max-height: 350px;
+  }
+
+  .post-date {
+    display: block;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+}
+
+/* ─── Reels grid ─── */
+.reels-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+
+  .reel-thumb {
+    width: 100%;
+    aspect-ratio: 9/16;
+    object-fit: cover;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    background: #000;
+    transition: transform .2s ease;
+
+    &:hover { transform: scale(1.03); }
+  }
+}

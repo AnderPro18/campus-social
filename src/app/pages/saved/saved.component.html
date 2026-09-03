@@ -1,0 +1,128 @@
+<div class="page-container saved-page">
+  <h2 class="page-title">Guardados</h2>
+
+  <div *ngIf="savedItems.length === 0">
+    <p>No tienes publicaciones guardadas.</p>
+  </div>
+
+  <!-- LISTA DE TARJETAS -->
+  <div class="saved-card"
+       *ngFor="let post of savedItems"
+       (click)="openPost(post)">
+
+    <!-- Thumbnail post -->
+    <img
+      *ngIf="post.imageUrl && post.type !== 'reel'"
+      [src]="post.imageUrl"
+      class="saved-thumb"
+    />
+
+    <!-- Thumbnail reel -->
+    <div *ngIf="post.type === 'reel' && post.videoUrl" class="reel-thumb-wrapper">
+      <video
+        [src]="post.videoUrl"
+        class="saved-thumb"
+        muted
+        playsinline
+        preload="metadata"
+        (mouseenter)="$any($event.target).play()"
+        (mouseleave)="$any($event.target).pause(); $any($event.target).currentTime = 0"
+      ></video>
+      <span class="reel-badge">▶ Reel</span>
+    </div>
+
+    <!-- Sin media -->
+    <div *ngIf="!post.imageUrl && !post.videoUrl" class="no-thumb">
+      📄
+    </div>
+
+    <div class="saved-info" [class.saved-no-img]="!post.imageUrl && !post.videoUrl">
+      <div class="saved-title">
+        {{ post.description || post.content || 'Sin descripción' }}
+      </div>
+      <div class="saved-meta" *ngIf="post.userName">
+        👤 {{ post.userName }}
+      </div>
+      <div class="saved-date">
+        Guardado el {{ post.savedAt?.toDate() | date:'short' }}
+      </div>
+
+      <div class="saved-reactions" *ngIf="post.totalReactions > 0">
+        <div class="emoji-bubble">
+          <span *ngIf="post.likesCount > 0">👍</span>
+          <span *ngIf="post.loveCount > 0">❤️</span>
+          <span *ngIf="post.hahaCount > 0">😂</span>
+          <span *ngIf="post.wowCount > 0">😮</span>
+          <span *ngIf="post.sadCount > 0">😢</span>
+          <span *ngIf="post.angryCount > 0">😡</span>
+        </div>
+        <span class="reaction-total">{{ post.totalReactions }}</span>
+      </div>
+    </div>
+
+    <button class="trash-btn" (click)="remove(post.id, $event)">🗑️</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       MODAL VISTA DE PUBLICACIÓN
+  ══════════════════════════════════════════ -->
+  <div *ngIf="selectedPost"
+       class="modal-overlay"
+       (click)="closePost()">
+
+    <div class="modal-box" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="modal-author">
+          <img
+            [src]="selectedPost.avatarUrl || selectedPost.userAvatar || 'assets/default-avatar.png'"
+            class="modal-avatar"
+          />
+          <div>
+            <strong>{{ selectedPost.userName || 'Usuario' }}</strong>
+            <span class="modal-date">
+              {{ selectedPost.createdAt?.toDate
+                  ? (selectedPost.createdAt.toDate() | date:'medium')
+                  : (selectedPost.createdAt | date:'medium') }}
+            </span>
+          </div>
+        </div>
+        <button class="modal-close" (click)="closePost()">✕</button>
+      </div>
+
+      <!-- Contenido texto -->
+      <p class="modal-content" *ngIf="selectedPost.content || selectedPost.description">
+        {{ selectedPost.description || selectedPost.content }}
+      </p>
+
+      <!-- Imagen -->
+      <img
+        *ngIf="selectedPost.imageUrl && selectedPost.type !== 'reel'"
+        [src]="selectedPost.imageUrl"
+        class="modal-image"
+      />
+
+      <!-- Video reel -->
+      <video
+        *ngIf="selectedPost.type === 'reel' && selectedPost.videoUrl"
+        [src]="selectedPost.videoUrl"
+        controls
+        playsinline
+        preload="metadata"
+        class="modal-video"
+      ></video>
+
+      <!-- Stats -->
+      <div class="modal-stats">
+        <span>👍 {{ selectedPost.likes || selectedPost.likesCount || 0 }}</span>
+        <span>💬 {{ selectedPost.commentsCount || 0 }}</span>
+        <span>🔁 {{ selectedPost.repostsCount || 0 }}</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" *ngIf="toastMessage">{{ toastMessage }}</div>
+</div>

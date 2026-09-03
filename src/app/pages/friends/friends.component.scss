@@ -1,0 +1,289 @@
+@use '../../../styles/mixins' as m;
+
+/* ============================================================
+   AMIGOS — estilo propio neumórfico (Campus Social)
+   Depende de: styles/_tokens.scss + styles/_mixins.scss
+   ============================================================ */
+
+.friends-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--sp-4) var(--sp-4) var(--sp-6);
+  background: var(--surface-sunken);
+  min-height: 100vh;
+  color: var(--text-primary);
+}
+
+.friends-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--sp-3);
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  margin: 0;
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: var(--sp-4);
+  overflow-x: auto;
+  @include m.themed-scrollbar;
+}
+
+.tab {
+  border: none;
+  border-radius: var(--r-pill);
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--surface-alt);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background .18s ease, color .18s ease;
+  @include m.focus-ring;
+
+  &:hover { background: color-mix(in srgb, var(--brand-blue-light) 12%, var(--surface-alt)); }
+
+  &.active {
+    @include m.brand-button(var(--r-pill));
+    padding: 10px 18px;
+  }
+
+  .badge {
+    background: var(--danger);
+    color: var(--text-on-brand);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: var(--r-pill);
+    padding: 1px 6px;
+  }
+}
+
+/* ── Estados ── */
+.state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 0;
+  color: var(--text-secondary);
+
+  i { font-size: 32px; color: var(--brand-blue-light); }
+  p { font-size: 14.5px; }
+}
+
+/* ── Buscador ── */
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  @include m.neu-inset(var(--r-sm));
+  padding: 10px 14px;
+  margin-bottom: var(--sp-4);
+
+  i { color: var(--text-secondary); }
+
+  input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 15px;
+    width: 100%;
+    color: var(--text-primary);
+
+    &::placeholder { color: var(--text-muted); }
+  }
+}
+
+.count-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 6px 0 14px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  margin: 18px 0 12px;
+
+  &:first-child { margin-top: 0; }
+}
+
+/* ── Fila de amigo (pestaña Amigos) ── */
+.person-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  @include m.neu-flat(var(--r-md));
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  position: relative;
+
+  .avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
+    flex-shrink: 0;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .info {
+    flex: 1;
+    cursor: pointer;
+    min-width: 0;
+
+    h4 {
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mutual {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 2px 0 0;
+    }
+  }
+}
+
+/* ── Tarjeta (pestaña Sugerencias: solicitudes + sugerencias) ── */
+.person-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  @include m.neu-raised(var(--r-lg));
+  padding: 14px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+
+  .avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
+    flex-shrink: 0;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .info {
+    flex: 1;
+    min-width: 140px;
+    cursor: pointer;
+
+    h4 {
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .mutual {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 2px 0 0;
+    }
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    margin-top: 4px;
+  }
+}
+
+.btn-confirm,
+.btn-remove {
+  flex: 1;
+  border: none;
+  border-radius: var(--r-sm);
+  padding: 9px 0;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s ease, filter .18s ease;
+  @include m.focus-ring;
+}
+
+.btn-confirm {
+  @include m.brand-button(var(--r-sm));
+  padding: 9px 0;
+}
+
+.btn-remove {
+  background: var(--surface-alt);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+
+  &:hover { background: color-mix(in srgb, var(--danger) 10%, var(--surface-alt)); }
+}
+
+/* ── Menú "···" en lista de amigos ── */
+.menu-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.dots-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background .18s ease;
+  @include m.focus-ring;
+
+  &:hover { background: color-mix(in srgb, var(--brand-blue-light) 12%, transparent); }
+}
+
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  background: var(--surface-alt);
+  border-radius: var(--r-md);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+  min-width: 190px;
+  z-index: 20;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background .15s ease;
+
+  &:hover { background: color-mix(in srgb, var(--brand-blue-light) 10%, transparent); }
+
+  &.danger { color: var(--danger); }
+}

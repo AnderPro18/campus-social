@@ -1,0 +1,76 @@
+<div class="notif-panel">
+
+  <!-- HEADER -->
+  <div class="notif-header">
+    <span class="notif-title">Notificaciones</span>
+    <button
+      class="mark-all-btn"
+      *ngIf="notifications.length > 0"
+      (click)="markAllRead()">
+      Marcar todas como leídas
+    </button>
+  </div>
+
+  <!-- VACÍO -->
+  <div class="notif-empty" *ngIf="notifications.length === 0">
+    <i class="bi bi-bell-slash"></i>
+    <p>No tienes notificaciones</p>
+  </div>
+
+  <!-- LISTA -->
+  <div
+    class="notif-item"
+    *ngFor="let n of notifications"
+    [class.unread]="!n.read"
+    (click)="openNotification(n)">
+
+    <!-- Avatar + badge tipo -->
+    <div class="notif-avatar-wrap">
+      <img
+        [src]="n.fromAvatar || 'assets/default-avatar.png'"
+        class="notif-avatar"
+        onerror="this.src='assets/default-avatar.png'">
+      <span class="notif-type-icon">
+        <i class="bi {{ getIcon(n.type) }}"></i>
+      </span>
+    </div>
+
+    <!-- Contenido -->
+    <div class="notif-body">
+      <p class="notif-text">
+        <strong>{{ n.fromName }}</strong>
+        {{ getLabel(n.type) }}
+      </p>
+      <span
+        *ngIf="n.text && (n.type === 'comment' || n.type === 'message' || n.type === 'reply')"
+        class="notif-preview">
+        "{{ n.text | slice:0:60 }}{{ (n.text?.length ?? 0) > 60 ? '…' : '' }}"
+      </span>
+      <span class="notif-time">{{ timeAgo(n) }}</span>
+    </div>
+
+    <!-- Punto no leída -->
+    <div class="notif-dot" *ngIf="!n.read"></div>
+
+    <!-- ACCIONES: solicitud de amistad pendiente -->
+    <div
+      class="notif-actions"
+      *ngIf="hasFriendAction(n) && !isProcessed(n)"
+      (click)="$event.stopPropagation()">
+
+      <button class="btn-accept" (click)="acceptFriendRequest(n, $event)">
+        <i class="bi bi-check-lg"></i> Aceptar
+      </button>
+      <button class="btn-reject" (click)="rejectFriendRequest(n, $event)">
+        <i class="bi bi-x-lg"></i> Rechazar
+      </button>
+    </div>
+
+    <!-- Ya procesada -->
+    <div class="notif-processed" *ngIf="hasFriendAction(n) && isProcessed(n)">
+      <span><i class="bi bi-check2-circle"></i> Procesada</span>
+    </div>
+
+  </div>
+
+</div>

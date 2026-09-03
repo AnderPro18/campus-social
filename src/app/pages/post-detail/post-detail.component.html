@@ -1,0 +1,102 @@
+<div class="post-detail-container">
+
+  <div *ngIf="loading">Cargando...</div>
+
+  <div *ngIf="!loading && post" class="post-card">
+
+    <!-- HEADER -->
+    <div class="post-header">
+      <img
+        [src]="post.userAvatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+        class="avatar"
+      >
+      <div>
+        <strong>{{ post.userName }}</strong>
+        <p>{{ post.createdAt | date:'short' }}</p>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <p>{{ post.content }}</p>
+
+<div *ngIf="post.imageUrl" class="image-container">
+  <img [src]="post.imageUrl" class="post-img">
+</div>    <video *ngIf="post.videoUrl" [src]="post.videoUrl" controls></video>
+
+    <!-- 🔥 REACCIONES -->
+    <div class="stats">
+
+      <span
+        (mousedown)="startHold($event)"
+        (mouseup)="endHold()"
+        style="cursor:pointer">
+
+        {{
+          userReaction === 'love' ? '❤️' :
+          userReaction === 'haha' ? '😂' :
+          userReaction === 'wow' ? '😮' :
+          userReaction === 'sad' ? '😢' :
+          userReaction === 'angry' ? '😡' : '👍'
+        }}
+
+        {{ likesCount }}
+      </span>
+
+      💬 {{ comments.length }}
+    </div>
+
+    <!-- MENU REACCIONES -->
+    <div
+      *ngIf="reactionMenuVisible"
+      class="reaction-menu"
+      [style.left.px]="reactionMenuPos.x"
+      [style.top.px]="reactionMenuPos.y">
+
+      <span
+        *ngFor="let r of reactionList"
+        (click)="react(r.type)"
+        style="font-size:22px; cursor:pointer; margin:5px;">
+        {{ r.emoji }}
+      </span>
+
+    </div>
+
+    <!-- COMMENTS -->
+    <div class="comments-section">
+
+      <h4>Comentarios</h4>
+
+      <div class="comment-input">
+        <input [(ngModel)]="newComment" placeholder="Escribe...">
+        <button (click)="addComment()">Enviar</button>
+      </div>
+
+      <div *ngFor="let c of comments" class="comment">
+
+        <img
+          [src]="c.userAvatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+          class="avatar-small"
+        >
+
+        <div>
+          <strong>{{ c.userName }}</strong>
+          <p>{{ c.text }}</p>
+
+          <span>{{ c.createdAt | date:'short' }}</span>
+
+          <!-- 🔥 ELIMINAR -->
+          <span
+            *ngIf="c.userId === (auth.user$ | async)?.uid"
+            (click)="deleteComment(c)"
+            style="color:red; cursor:pointer; margin-left:10px;">
+            🗑
+          </span>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,236 @@
+@use '../../../styles/mixins' as m;
+
+/* ============================================================
+   HOME — identidad propia sobre base neumórfica
+   ============================================================ */
+.home,
+.dashboard {
+  background: var(--surface);
+  min-height: 100vh;
+  padding: var(--sp-7) var(--sp-5);
+  font-family: var(--font-body);
+  transition: var(--theme-transition);
+}
+
+/* ---------------- HERO ---------------- */
+.hero {
+  max-width: 1150px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 50px;
+
+  .hero-content {
+    flex: 1;
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: 46px;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 20px 0;
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 480px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 14px;
+      margin-top: 10px;
+    }
+  }
+
+  .hero-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+
+    img {
+      width: 240px;
+      opacity: 0.95;
+      padding: var(--sp-5);
+      border-radius: var(--r-xl);
+      background: var(--surface);
+      box-shadow: 14px 14px 28px var(--neu-dark), -14px -14px 28px var(--neu-light);
+    }
+  }
+}
+
+/* ---------------- FEATURES ---------------- */
+.features {
+  margin-top: 80px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 22px;
+  max-width: 1100px;
+  margin-inline: auto;
+
+  .feature-card {
+    @include m.neu-raised(var(--r-lg));
+    @include m.lift-on-hover(-6px);
+    padding: 28px 24px;
+    text-align: center;
+
+    i {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      margin-bottom: 14px;
+      border-radius: 50%;
+      font-size: 24px;
+      color: #fff;
+      background: var(--brand-gradient);
+      box-shadow: 0 6px 14px rgba(0, 56, 147, 0.3);
+    }
+
+    h3 {
+      margin-bottom: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      font-family: var(--font-display);
+      color: var(--text-primary);
+    }
+
+    p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    &:hover {
+      box-shadow: 10px 10px 20px var(--neu-dark), -10px -10px 20px var(--neu-light);
+    }
+  }
+}
+
+/* ---------------- DASHBOARD (usuario logueado) ---------------- */
+.dashboard {
+  .welcome-card {
+    @include m.neu-raised(var(--r-xl));
+    max-width: 520px;
+    margin: auto;
+    padding: 36px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 5px;
+      background: var(--brand-gradient-gold);
+    }
+
+    h2 {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    p {
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+  }
+
+  .quick-actions {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 20px;
+    max-width: 700px;
+    margin-inline: auto;
+
+    .action {
+      @include m.neu-raised(var(--r-lg));
+      @include m.lift-on-hover(-5px);
+      padding: 22px 16px;
+      text-align: center;
+      cursor: pointer;
+
+      i {
+        font-size: 24px;
+        color: var(--brand-blue);
+        transition: color .2s ease;
+      }
+
+      span {
+        display: block;
+        margin-top: 10px;
+        font-weight: 600;
+        font-family: var(--font-display);
+        font-size: 14px;
+        color: var(--text-primary);
+      }
+
+      &:active {
+        @include m.neu-pressed(var(--r-lg));
+      }
+
+      &:hover i {
+        color: var(--brand-gold-dark);
+      }
+    }
+  }
+}
+
+/* ---------------- BOTONES LOCALES ---------------- */
+.btn {
+  padding: 12px 22px;
+  border-radius: var(--r-pill);
+  font-weight: 600;
+  font-family: var(--font-body);
+  text-decoration: none;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-block;
+
+  &.primary {
+    @include m.brand-button();
+  }
+
+  &.outline {
+    background: transparent;
+    border: 2px solid var(--brand-blue-light);
+    color: var(--brand-blue-light);
+    transition: var(--theme-transition), transform .18s ease;
+
+    &:hover {
+      background: var(--surface-alt);
+      transform: translateY(-2px);
+    }
+  }
+}
+
+/* ---------------- RESPONSIVE ---------------- */
+@media (max-width: 900px) {
+  .hero {
+    flex-direction: column;
+    text-align: center;
+
+    .hero-content {
+      p {
+        margin-inline: auto;
+      }
+
+      .actions {
+        justify-content: center;
+      }
+    }
+
+    .hero-image img {
+      width: 180px;
+    }
+  }
+}

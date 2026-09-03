@@ -1,0 +1,143 @@
+/* ============================================================
+   MIXINS NEUMÓRFICOS v2 — Campus Social
+   Relieve más profundo + toques premium (brillo dorado, sheen
+   en botones, cristal esmerilado para paneles flotantes)
+   Úsalos con: @use 'mixins' as m;  →  @include m.neu-raised();
+   ============================================================ */
+
+// Superficie "elevada" — ahora con borde de brillo superior sutil
+@mixin neu-raised($radius: var(--r-md), $elevation: var(--elev-2)) {
+  background: var(--surface);
+  border-radius: $radius;
+  box-shadow:
+    #{$elevation},
+    inset 0 1px 0 color-mix(in srgb, var(--neu-light) 70%, transparent);
+  transition: var(--theme-transition), box-shadow .25s ease, transform .25s ease;
+}
+
+// Variante extra profunda — para tarjetas destacadas / hero
+@mixin neu-deep($radius: var(--r-lg)) {
+  @include neu-raised($radius, var(--elev-3));
+}
+
+// Superficie "hundida" — relieve más marcado que antes
+@mixin neu-inset($radius: var(--r-md), $depth: 1) {
+  background: var(--surface);
+  border-radius: $radius;
+  box-shadow:
+    inset calc(5px * #{$depth}) calc(5px * #{$depth}) calc(12px * #{$depth}) var(--neu-dark),
+    inset calc(-5px * #{$depth}) calc(-5px * #{$depth}) calc(12px * #{$depth}) var(--neu-light);
+  transition: var(--theme-transition);
+}
+
+// Superficie "plana" con sombra sutil — listas largas (chat, ítems)
+@mixin neu-flat($radius: var(--r-sm)) {
+  background: var(--surface-alt);
+  border-radius: $radius;
+  box-shadow: 3px 3px 8px var(--neu-dark), -3px -3px 8px var(--neu-light);
+  transition: var(--theme-transition);
+}
+
+// Estado presionado/activo — más profundo, se siente más "clicable"
+@mixin neu-pressed($radius: var(--r-md)) {
+  background: var(--surface);
+  border-radius: $radius;
+  box-shadow:
+    inset 4px 4px 10px var(--neu-dark),
+    inset -4px -4px 10px var(--neu-light);
+}
+
+// Botón con gradiente de marca + halo dorado y barrido de brillo al hover
+// (el toque "seductor": sheen animado + glow dorado de prosperidad)
+@mixin brand-button($radius: var(--r-pill)) {
+  position: relative;
+  overflow: hidden;
+  background: var(--brand-gradient);
+  color: var(--text-on-brand);
+  border: none;
+  border-radius: $radius;
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  cursor: pointer;
+  box-shadow: 0 10px 26px var(--royal-glow), 4px 4px 10px var(--neu-dark);
+  transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform .5s ease;
+    pointer-events: none;
+  }
+
+  &:hover {
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px var(--royal-glow), 0 0 0 3px var(--gold-glow);
+
+    &::after { transform: translateX(120%); }
+  }
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px var(--royal-glow);
+  }
+}
+
+// Acento dorado — insignias, etiquetas "premium", cifras destacadas
+@mixin gold-accent($radius: var(--r-pill)) {
+  background: var(--brand-gradient-gold);
+  color: var(--brand-blue-dark);
+  border-radius: $radius;
+  font-weight: 700;
+  box-shadow: 0 6px 18px var(--gold-glow);
+}
+
+// Superficie de "cristal esmerilado" — paneles/modales flotantes premium
+@mixin glass-surface($radius: var(--r-lg)) {
+  background: color-mix(in srgb, var(--surface-alt) 82%, transparent);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-radius: $radius;
+  border: 1px solid color-mix(in srgb, var(--neu-light) 50%, transparent);
+  box-shadow: var(--elev-3);
+}
+
+// Anillo de foco accesible, con halo suave a juego con la marca
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--brand-blue-light);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-blue-light) 20%, transparent);
+  }
+}
+
+// Scrollbar delgado, con acento de marca al pasar el cursor
+@mixin themed-scrollbar($width: 6px) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--neu-dark) transparent;
+
+  &::-webkit-scrollbar {
+    width: $width;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--neu-dark);
+    border-radius: var(--r-pill);
+
+    &:hover { background: var(--brand-blue-light); }
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+// Hover de "levitar" — ahora también profundiza la sombra al subir
+@mixin lift-on-hover($distance: -6px) {
+  transition: transform .25s ease, box-shadow .25s ease;
+  &:hover {
+    transform: translateY($distance);
+    box-shadow: var(--elev-3);
+  }
+}

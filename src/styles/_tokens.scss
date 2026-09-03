@@ -1,0 +1,104 @@
+/* ============================================================
+   DESIGN TOKENS — Campus Social
+   v2: relieve neumórfico más profundo + acabado premium (oro
+   institucional como acento de "prosperidad")
+   ============================================================ */
+
+:root {
+  /* ---- Marca UNIAJC ---- */
+  --brand-blue: #003893;
+  --brand-blue-light: #2a5cc2;
+  --brand-blue-dark: #002458;
+  --brand-gold: #ffcc00;
+  --brand-gold-deep: #c9971b;   /* oro profundo, para degradados/glow */
+  --brand-gold-dark: #d9ad00;
+
+  --brand-gradient: linear-gradient(135deg, var(--brand-blue-light) 0%, var(--brand-blue) 55%, var(--brand-blue-dark) 100%);
+  --brand-gradient-gold: linear-gradient(135deg, #ffe066 0%, var(--brand-gold) 45%, var(--brand-gold-deep) 100%);
+
+  /* Halos de color — para glow en botones/insignias premium */
+  --royal-glow: rgba(0, 56, 147, 0.32);
+  --gold-glow: rgba(255, 204, 0, 0.38);
+
+  /* ---- Superficie neumórfica — MODO CLARO ---- */
+  --surface: #e9edf3;
+  --surface-alt: #f2f4f8;
+  --surface-sunken: #dfe4ec;
+
+  /* Sombras más contrastadas = relieve más marcado */
+  --neu-light: rgba(255, 255, 255, 0.9);
+  --neu-dark: rgba(163, 177, 198, 0.65);
+
+  --text-primary: #212636;
+  --text-secondary: #6b7280;
+  --text-muted: #97a0b3;
+  --text-on-brand: #ffffff;
+
+  --border-subtle: rgba(33, 38, 54, 0.06);
+  --danger: #e5484d;
+  --success: #2fbf71;
+  --info: var(--brand-blue-light);
+
+  /* ---- Elevaciones neumórficas por niveles (más profundidad) ---- */
+  --elev-1: 5px 5px 12px var(--neu-dark), -5px -5px 12px var(--neu-light);
+  --elev-2: 9px 9px 22px var(--neu-dark), -9px -9px 22px var(--neu-light);
+  --elev-3: 16px 16px 38px var(--neu-dark), -16px -16px 38px var(--neu-light);
+
+  /* ---- Radios ---- */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --r-2xl: 40px;
+  --r-pill: 999px;
+
+  /* ---- Espaciado ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  /* ---- Tipografía ---- */
+  --font-display: 'Poppins', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+  --tracking-wide: 0.3px;
+
+  /* ---- Transición de tema ---- */
+  --theme-transition: background-color .35s ease, color .35s ease, box-shadow .35s ease, border-color .35s ease;
+
+  /* ---- Compatibilidad hacia atrás (nombres antiguos) ---- */
+  --primary-blue: var(--brand-blue);
+  --primary-blue-dark: var(--brand-blue-dark);
+  --secondary-yellow: var(--brand-gold);
+  --white: var(--surface-alt);
+  --gray: var(--surface);
+  --dark-text: var(--text-primary);
+  --card-bg: var(--surface);
+  --shadow: var(--elev-2);
+  --radius: var(--r-md);
+}
+
+/* ---- Superficie neumórfica — MODO OSCURO ---- */
+[data-theme='dark'] {
+  --surface: #1d212b;
+  --surface-alt: #232836;
+  --surface-sunken: #171a22;
+
+  /* Contraste alto también en oscuro, para que el relieve no se pierda */
+  --neu-light: rgba(255, 255, 255, 0.06);
+  --neu-dark: rgba(0, 0, 0, 0.7);
+
+  --text-primary: #eef1f6;
+  --text-secondary: #a3acc2;
+  --text-muted: #6b7386;
+  --border-subtle: rgba(255, 255, 255, 0.07);
+
+  --brand-blue-light: #4d7fe0;
+  --royal-glow: rgba(77, 127, 224, 0.45);
+  --gold-glow: rgba(255, 207, 92, 0.32);
+
+  --shadow: var(--elev-2);
+}

@@ -1,0 +1,135 @@
+<div class="user-profile-page">
+
+    <!-- CARGANDO -->
+    <div class="state-box" *ngIf="loading">
+      <i class="bi bi-hourglass-split"></i>
+      <p>Cargando perfil...</p>
+    </div>
+  
+    <!-- NO ENCONTRADO -->
+    <div class="state-box" *ngIf="!loading && notFound">
+      <i class="bi bi-person-x"></i>
+      <p>Este usuario no existe.</p>
+      <button (click)="goBack()">Volver al feed</button>
+    </div>
+  
+    <!-- PERFIL -->
+    <div *ngIf="!loading && !notFound && profileUser">
+  
+      <!-- PORTADA -->
+      <div class="cover" [style.backgroundImage]="profileUser.cover ? 'url(' + profileUser.cover + ')' : 'none'">
+        <button class="back-btn" (click)="goBack()">
+          <i class="bi bi-arrow-left"></i> Volver
+        </button>
+      </div>
+  
+      <!-- AVATAR + INFO -->
+      <div class="profile-header">
+        <img
+          class="avatar"
+          [src]="profileUser.avatar || profileUser.photoURL || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+          alt="Avatar"
+        >
+        <div class="info">
+          <h2>{{ profileUser.displayName }}</h2>
+          <p class="career" *ngIf="profileUser.careerOrArea">{{ profileUser.careerOrArea }}</p>
+          <p class="friends-count">{{ friendsCount }} amigo{{ friendsCount === 1 ? '' : 's' }}</p>
+          <p class="bio" *ngIf="profileUser.bio">{{ profileUser.bio }}</p>
+          <div class="meta">
+            <span *ngIf="profileUser.birthPlace">
+              <i class="bi bi-geo-alt"></i> {{ profileUser.birthPlace }}
+            </span>
+          </div>
+
+          <!-- ACCIONES: AMISTAD + MENSAJE -->
+          <div class="profile-actions">
+
+            <button
+              *ngIf="friendStatus === 'none'"
+              class="btn-action btn-primary"
+              [disabled]="friendActionLoading"
+              (click)="sendFriendRequest()"
+            >
+              <i class="bi bi-person-plus-fill"></i> Agregar a amigos
+            </button>
+
+            <button
+              *ngIf="friendStatus === 'pending-sent'"
+              class="btn-action btn-secondary"
+              [disabled]="friendActionLoading"
+              (click)="cancelFriendRequest()"
+            >
+              <i class="bi bi-person-check-fill"></i> Solicitud enviada
+            </button>
+
+            <ng-container *ngIf="friendStatus === 'pending-received'">
+              <button class="btn-action btn-primary" [disabled]="friendActionLoading" (click)="acceptFriendRequest()">
+                <i class="bi bi-person-check-fill"></i> Aceptar solicitud
+              </button>
+              <button class="btn-action btn-secondary" [disabled]="friendActionLoading" (click)="rejectFriendRequest()">
+                Rechazar
+              </button>
+            </ng-container>
+
+            <button
+              *ngIf="friendStatus === 'friends'"
+              class="btn-action btn-secondary"
+              disabled
+            >
+              <i class="bi bi-people-fill"></i> Amigos
+            </button>
+
+            <button class="btn-action btn-message" (click)="sendMessage()">
+              <i class="bi bi-messenger"></i> Mensaje
+            </button>
+
+          </div>
+        </div>
+      </div>
+  
+      <!-- STATS -->
+      <div class="stats">
+        <div class="stat">
+          <span class="num">{{ posts.length }}</span>
+          <span class="label">Publicaciones</span>
+        </div>
+        <div class="stat">
+          <span class="num">{{ reels.length }}</span>
+          <span class="label">Reels</span>
+        </div>
+      </div>
+  
+      <!-- POSTS -->
+      <div class="section" *ngIf="posts.length > 0">
+        <h3>Publicaciones</h3>
+        <div class="post-card" *ngFor="let post of posts">
+          <p class="post-content">{{ post.content }}</p>
+          <img *ngIf="post.imageUrl" [src]="post.imageUrl" class="post-image">
+          <span class="post-date">{{ post.createdAt | date:'mediumDate' }}</span>
+        </div>
+      </div>
+  
+      <!-- REELS -->
+      <div class="section" *ngIf="reels.length > 0">
+        <h3>Reels</h3>
+        <div class="reels-grid">
+          <video
+            *ngFor="let reel of reels"
+            [src]="reel.videoUrl"
+            class="reel-thumb"
+            muted
+            loop
+            (mouseenter)="$any($event.target).play()"
+            (mouseleave)="$any($event.target).pause()"
+          ></video>
+        </div>
+      </div>
+  
+      <!-- SIN CONTENIDO -->
+      <div class="state-box" *ngIf="posts.length === 0 && reels.length === 0">
+        <i class="bi bi-journal-x"></i>
+        <p>Este usuario aún no tiene publicaciones.</p>
+      </div>
+  
+    </div>
+  </div>

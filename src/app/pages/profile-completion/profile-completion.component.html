@@ -1,0 +1,30 @@
+<div class="completion-container">
+  <h2>Completa tu información</h2>
+
+  <form (ngSubmit)="submit()">
+
+    <div *ngIf="isStudent">
+      <label>Carrera universitaria</label>
+      <input type="text" [(ngModel)]="form.carrera" name="carrera" required>
+    </div>
+
+    <div *ngIf="!isStudent">
+      <label>Área docente</label>
+      <input type="text" [(ngModel)]="form.area" name="area" required>
+    </div>
+
+    <label>Fecha de nacimiento</label>
+    <input type="date" [(ngModel)]="form.fechaNacimiento" name="fechaNacimiento" required>
+
+    <label>Ciudad de nacimiento</label>
+    <input type="text" [(ngModel)]="form.ciudad" name="ciudad" required>
+
+    <label>Departamento</label>
+    <input type="text" [(ngModel)]="form.departamento" name="departamento" required>
+
+    <label>Descripción (opcional)</label>
+    <textarea [(ngModel)]="form.descripcion" name="descripcion"></textarea>
+
+    <button type="submit" class="btn-save">Guardar</button>
+  </form>
+</div>

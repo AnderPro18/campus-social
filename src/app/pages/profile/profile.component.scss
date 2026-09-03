@@ -1,0 +1,303 @@
+@use '../../../styles/mixins' as m;
+
+/* ============================================================
+   PERFIL — estilo propio neumórfico (Campus Social)
+   Depende de: styles/_tokens.scss + styles/_mixins.scss
+   ============================================================ */
+
+.page-container.profile-page {
+  max-width: 750px;
+  margin: 20px auto;
+  padding: 10px;
+  color: var(--text-primary);
+}
+
+/* ─── Header / portada ─── */
+.profile-header { position: relative; }
+
+.cover-container {
+  width: 100%;
+  height: 280px;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border-subtle);
+}
+
+.cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cover-buttons {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 10px;
+
+  button {
+    background: rgba(15, 18, 28, 0.55);
+    backdrop-filter: blur(4px);
+    color: var(--text-on-brand);
+    padding: 6px 10px;
+    border: none;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: background .18s ease;
+    @include m.focus-ring;
+
+    &:hover { background: rgba(15, 18, 28, 0.75); }
+  }
+}
+
+/* ─── Info de perfil ─── */
+.profile-info {
+  margin-top: -50px;
+  padding-left: 20px;
+}
+
+.avatar-container {
+  position: relative;
+  width: 100px;
+}
+
+.avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--surface-alt);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
+.avatar-buttons {
+  position: absolute;
+  bottom: 0;
+  right: -10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  button {
+    background: rgba(15, 18, 28, 0.65);
+    color: var(--text-on-brand);
+    border: none;
+    padding: 6px;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: background .18s ease;
+    @include m.focus-ring;
+
+    &:hover { background: rgba(15, 18, 28, 0.85); }
+  }
+}
+
+/* ─── Tarjetas ─── */
+.card {
+  @include m.neu-raised(var(--r-lg));
+  padding: var(--sp-4);
+  margin-top: var(--sp-5);
+
+  h3 {
+    margin-bottom: 12px;
+    color: var(--brand-blue);
+    font-family: var(--font-display);
+  }
+}
+
+/* ─── Formulario de edición ─── */
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  textarea,
+  input {
+    @include m.neu-inset(var(--r-sm));
+    @include m.focus-ring;
+    padding: 8px;
+    color: var(--text-primary);
+    border: none;
+  }
+
+  .btn-save {
+    @include m.brand-button(var(--r-sm));
+    padding: 8px;
+  }
+
+  .btn-cancel {
+    background: var(--surface-alt);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    border-radius: var(--r-sm);
+    padding: 8px;
+    cursor: pointer;
+    transition: background .18s ease;
+    @include m.focus-ring;
+    &:hover { background: color-mix(in srgb, var(--brand-blue-light) 10%, transparent); }
+  }
+}
+
+/* ─── Post / Reel card ─── */
+.post-card,
+.reel-card {
+  @include m.neu-raised(var(--r-lg));
+  @include m.lift-on-hover(-4px);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+.post-header,
+.reel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  strong { font-size: 15px; color: var(--text-primary); }
+  small  { font-size: 12px; color: var(--text-secondary); }
+}
+
+.post-card p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-line;
+  word-break: break-word;
+}
+
+.post-img,
+.post-video,
+.reel-video {
+  width: 100%;
+  border-radius: var(--r-md);
+  margin-top: 10px;
+}
+
+/* ─── Botones de acción ─── */
+.actions-row {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 10px;
+  padding-top: 8px;
+}
+
+.action-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  @include m.focus-ring;
+
+  &:hover { background: color-mix(in srgb, var(--brand-blue-light) 12%, transparent); color: var(--text-primary); }
+  &:active { @include m.neu-pressed(var(--r-sm)); }
+
+  &.active {
+    color: var(--brand-blue-light);
+    font-weight: 600;
+  }
+}
+
+/* ─── Comentarios ─── */
+.comment {
+  display: flex;
+  gap: 10px;
+
+  .comment-content {
+    @include m.neu-flat(var(--r-md));
+    padding: 8px;
+    width: 100%;
+    color: var(--text-primary);
+  }
+}
+
+/* ─── Reacción flotante ─── */
+.reaction-float {
+  position: fixed;
+  z-index: 9999;
+  background: var(--surface-alt);
+  border-radius: var(--r-pill);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25);
+  padding: 8px 12px;
+  display: flex;
+  gap: 10px;
+  animation: pop 0.2s ease;
+}
+
+.reaction-float span {
+  font-size: 24px;
+  cursor: pointer;
+  transition: transform .18s ease;
+
+  &:hover { transform: scale(1.4) translateY(-5px); }
+}
+
+/* ─── Modal de reacciones ─── */
+.reactions-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 12, 20, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.reactions-modal-content {
+  width: 90%;
+  max-width: 420px;
+  background: var(--surface-alt);
+  border-radius: var(--r-lg);
+  box-shadow: 0 24px 55px rgba(0, 0, 0, 0.32);
+  padding: 16px;
+  color: var(--text-primary);
+  animation: fadeIn 0.2s ease;
+}
+
+/* ============================================================
+   Overrides suaves para utilidades de Bootstrap que ya trae
+   el HTML (bg-white, shadow, rounded, btn-light) — se adaptan
+   a los tokens del tema sin tocar la plantilla.
+   ============================================================ */
+.profile-page {
+  .bg-white   { background: var(--surface-alt) !important; }
+  .bg-light   { background: var(--surface) !important; }
+  .shadow,
+  .shadow-sm  { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16) !important; }
+  .border-bottom { border-color: var(--border-subtle) !important; }
+  .text-muted { color: var(--text-secondary) !important; }
+  .btn-light {
+    background: var(--surface) !important;
+    border: 1px solid var(--border-subtle) !important;
+    color: var(--text-primary) !important;
+    &:hover { background: color-mix(in srgb, var(--brand-blue-light) 10%, transparent) !important; }
+  }
+  .rounded,
+  .rounded-pill { border-color: var(--border-subtle) !important; }
+}
+
+/* ============================================================
+   ANIMACIONES
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pop {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}

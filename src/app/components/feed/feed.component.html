@@ -1,0 +1,558 @@
+<div class="feed-container">
+
+  <!-- CREAR POST -->
+  <div class="new-post-card shadow-sm">
+    <div class="new-post-header d-flex align-items-center gap-3">
+      <div class="avatar-big">
+        {{ (authService.user$ | async)?.displayName?.charAt(0) | uppercase }}
+      </div>
+      <h3 class="m-0">Crear publicación</h3>
+    </div>
+
+    <div class="mention-wrapper">
+      <textarea
+        [(ngModel)]="newContent"
+        placeholder="¿Qué estás pensando? Escribe @ para etiquetar..."
+        rows="3"
+        class="form-control new-post-input mt-3"
+        (input)="onContentInput($event)">
+      </textarea>
+      <div *ngIf="mentionActive && mentionResults.length" class="mention-dropdown">
+        <div *ngFor="let u of mentionResults" class="mention-option"
+             (mousedown)="selectMention(u, 'newContent')">
+          <img [src]="u.avatar || 'assets/default-avatar.png'" class="mention-avatar">
+          <span class="mention-name">{{ u.userName }}</span>
+        </div>
+      </div>
+    </div>
+
+    <input
+      type="file"
+      class="form-control mt-2 file-input"
+      (change)="onFileSelected($event)"
+      accept="image/*" />
+
+    <div *ngIf="selectedFileBase64" class="image-preview-container mt-2">
+      <img [src]="selectedFileBase64" class="image-preview" />
+      <button class="remove-image-btn" (click)="selectedFileBase64 = null">✖</button>
+    </div>
+
+    <button
+      class="btn btn-primary mt-3 w-100 publish-btn"
+      [disabled]="isPublishing"
+      (click)="addPost()">
+      {{ isPublishing ? 'Publicando...' : 'Publicar' }}
+    </button>
+  </div>
+
+  <!-- POSTS -->
+  <ng-container *ngIf="posts$ | async as posts; else loadingTpl">
+    <ng-container *ngIf="posts && posts.length > 0; else noPostsTpl">
+
+      <div *ngFor="let post of posts" class="post-card shadow-sm animate-new-post">
+
+        <!-- HEADER -->
+        <div class="post-header">
+          <div class="w-100">
+
+            <!-- REPOST -->
+            <ng-container *ngIf="post.type === 'repost'; else originalHeader">
+              <div class="repost-info">
+                🔁 <strong>{{ post.repostedByName }}</strong> ha compartido una publicación
+              </div>
+              <div class="post-date mt-1">
+                {{ post.repostDate ? (post.repostDate | date:'short') : '' }}
+              </div>
+              <div class="original-author mt-2">
+                Publicación original de:
+                <strong (click)="post.originalAuthorId && goToProfile(post.originalAuthorId)" style="cursor:pointer">
+                  {{ post.originalAuthorName }}
+                </strong>
+              </div>
+              <div class="d-flex align-items-center gap-3 mt-3">
+                <div class="post-avatar">
+                  <img
+                    *ngIf="post.originalAuthorAvatar; else repostLetter"
+                    [src]="post.originalAuthorAvatar"
+                    class="avatar-img" />
+                  <ng-template #repostLetter>
+                    {{ (post.originalAuthorName || 'U').charAt(0) | uppercase }}
+                  </ng-template>
+                </div>
+                <div>
+                  <span class="post-user"
+                        (click)="post.originalAuthorId && goToProfile(post.originalAuthorId)"
+                        style="cursor:pointer">
+                    {{ post.originalAuthorName }}
+                  </span>
+                  <span class="post-date">
+                    {{ post.originalCreatedAt ? (post.originalCreatedAt | date:'short') : '' }}
+                  </span>
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- ORIGINAL -->
+            <ng-template #originalHeader>
+              <div class="d-flex align-items-center gap-3">
+                <div class="post-avatar">
+                  <img
+                    [src]="post.userAvatar"
+                    class="avatar-img"
+                    (click)="post.userId && goToProfile(post.userId)"
+                    style="cursor:pointer" />
+                </div>
+                <div>
+                  <span class="post-user"
+                        (click)="post.userId && goToProfile(post.userId)"
+                        style="cursor:pointer">
+                    {{ post.userName }}
+                  </span>
+                  <span class="post-date">
+                    {{ post.createdAt | date:'short' }}
+                  </span>
+                </div>
+              </div>
+            </ng-template>
+
+          </div>
+
+          <!-- MENU -->
+          <div class="menu-post">
+            <button class="menu-btn" (click)="toggleMenu(post.id!)">⋮</button>
+            <div *ngIf="openMenuId === post.id"
+                 class="menu-options shadow-sm p-2 bg-white rounded">
+              <button
+                *ngIf="post.userId === (authService.user$ | async)?.uid"
+                class="btn btn-sm w-100 text-start"
+                (click)="deletePost(post.id)">
+                🗑 Eliminar
+              </button>
+              <button
+                *ngIf="post.userId !== (authService.user$ | async)?.uid"
+                class="btn btn-sm w-100 text-start"
+                (click)="reportPost(post.id)">
+                ⚠ Reportar
+              </button>
+              <button
+                class="btn btn-sm w-100 text-start"
+                (click)="hidePost(post.id)">
+                🙈 Ocultar
+              </button>
+            </div>
+          </div>
+
+        </div>
+        <!-- /HEADER -->
+
+        <!-- CONTENT -->
+        <div class="post-content">
+          <p class="post-text">
+            <ng-container *ngFor="let word of post.content.split(' ')">
+              <span *ngIf="word.startsWith('@')"
+                    class="tag-user"
+                    (click)="$event.stopPropagation(); goToUserByName(word)">
+                {{ word }}
+              </span>
+              <span *ngIf="!word.startsWith('@')">{{ word }} </span>
+            </ng-container>
+          </p>
+          <img *ngIf="post.imageUrl" [src]="post.imageUrl" class="post-image rounded" />
+          <video *ngIf="post.videoUrl"
+                 [src]="post.videoUrl"
+                 controls
+                 playsinline
+                 preload="metadata"
+                 class="post-video rounded mt-2">
+          </video>
+        </div>
+        <!-- /CONTENT -->
+
+        <!-- ACTIONS -->
+        <div class="post-actions">
+
+          <div style="position:relative; flex:1; display:flex;">
+            <button
+              [ngClass]="['reaction-btn', getReactionClass(post.id!, (authService.user$ | async)?.uid)]"
+              style="flex:1; padding:10px 0;"
+              (mousedown)="startHold(post, $event)"
+              (mouseup)="endHold(post)"
+              (mouseleave)="cancelHold()"
+              (touchstart)="startHold(post, $event); $event.preventDefault()"
+              (touchend)="endHold(post); $event.preventDefault()">
+              {{ getReactionEmoji(getLocalReaction(post.id!, currentUid ?? '')) }}
+              {{ getReactionLabel(getLocalReaction(post.id!, currentUid ?? '')) }}
+            </button>
+
+            <!-- MENÚ DE REACCIONES (hold) -->
+            <div *ngIf="reactionMenuPostId === post.id && reactionMenuVisible"
+                 class="reaction-menu"
+                 [style.left.px]="reactionMenuPos.left"
+                 [style.top.px]="reactionMenuPos.top">
+              <button
+                *ngFor="let r of reactionList"
+                class="reaction-item"
+                [title]="r.label"
+                (click)="selectReaction(post, r.type)">
+                {{ r.emoji }}
+              </button>
+            </div>
+          </div>
+
+          <button (click)="openComments(post)">💬 Comentar</button>
+          <button (click)="save(post.id!)">🔖 Guardar</button>
+          <button (click)="openRepostModal(post)">🔁 Repostear</button>
+
+        </div>
+        <!-- /ACTIONS -->
+
+        <!-- STATS -->
+        <div class="post-stats">
+          <span (click)="showReactions(post.id!)" style="cursor:pointer">
+            👍 {{ post.likesCount || 0 }}
+          </span>
+          <span>💬 {{ post.commentsCount || 0 }}</span>
+          <span>🔁 {{ post.repostsCount || 0 }}</span>
+        </div>
+
+        <!-- COMMENTS PANEL -->
+        <div *ngIf="openCommentsFor === post.id" class="comments-panel">
+
+          <h4>Comentarios</h4>
+
+          <ng-container *ngIf="post.id && commentsMap[post.id]?.length; else noCommentsLocalTpl">
+
+            <div *ngFor="let c of commentsMap[post.id]" class="comment-item">
+              <div class="d-flex gap-2">
+
+                <img [src]="c.userAvatar || 'assets/default-avatar.png'"
+                     class="avatar-img"
+                     (click)="goToProfile(c.userId)"
+                     style="cursor:pointer; width:36px; height:36px;" />
+
+                <div class="comment-body" style="flex:1">
+
+                  <strong (click)="goToProfile(c.userId)" style="cursor:pointer">
+                    {{ c.userName }}
+                  </strong>
+
+                  <!-- Modo edición -->
+                  <ng-container *ngIf="editingCommentId === c.id; else viewComment">
+                    <textarea
+                      [(ngModel)]="editCommentDraft"
+                      class="form-control mt-1"
+                      rows="2">
+                    </textarea>
+                    <div class="comment-actions mt-1">
+                      <span class="action edit" (click)="saveEditComment(post, c)">✔ Guardar</span>
+                      <span class="action" (click)="cancelEditComment()">✖ Cancelar</span>
+                    </div>
+                  </ng-container>
+
+                  <!-- Modo vista -->
+                  <ng-template #viewComment>
+<p class="comment-text mb-1">
+  <ng-container *ngFor="let part of getCommentWithMentions(c.text)">
+    <span *ngIf="part.isMention"
+          class="mention-tag"
+          (click)="goToMentionedUser(part.userName)">
+      {{ part.text }}
+    </span>
+    <span *ngIf="!part.isMention">{{ part.text }}</span>
+  </ng-container>
+</p>
+                    <div class="comment-actions">
+
+                      <!-- Reacción comentario -->
+                      <span
+                        class="action reaction"
+                        [class.reaction-like]="c.userReaction === 'like'"
+                        [class.reaction-love]="c.userReaction === 'love'"
+                        [class.reaction-haha]="c.userReaction === 'haha'"
+                        [class.reaction-wow]="c.userReaction === 'wow'"
+                        [class.reaction-sad]="c.userReaction === 'sad'"
+                        [class.reaction-angry]="c.userReaction === 'angry'"
+                        (mousedown)="startCommentHold(post, c, $event)"
+                        (mouseup)="endCommentHold(post, c)"
+                        (mouseleave)="cancelCommentHold()"
+                        (touchstart)="startCommentHold(post, c, $event); $event.preventDefault()"
+                        (touchend)="endCommentHold(post, c); $event.preventDefault()">
+                        {{ c.userReaction ? getReactionEmoji(c.userReaction) : '👍' }}
+                        {{ c.userReaction ? getReactionLabel(c.userReaction) : 'Me gusta' }}
+                      </span>
+
+                      <!-- Menú reacciones comentario -->
+                      <div *ngIf="commentReactionMenuId === c.id" class="reaction-menu-comment">
+                        <button
+                          *ngFor="let r of reactionList"
+                          class="reaction-item"
+                          [title]="r.label"
+                          (click)="selectCommentReaction(post, c, r.type)">
+                          {{ r.emoji }}
+                        </button>
+                      </div>
+
+                      <!-- Ver quién reaccionó al comentario -->
+                      <span
+                        class="action"
+                        style="color:#65676b;"
+                        (click)="showCommentReactions(c)">
+                        👥 {{ (c.reactionsCount || 0) }}
+                      </span>
+
+                      <!-- Responder -->
+                      <span class="action reply"
+                            (click)="activeReplyCommentId = activeReplyCommentId === c.id ? null : (c.id ?? null)">
+                        💬 Responder
+                      </span>
+
+                      <!-- Editar (solo autor) -->
+                      <span
+                        *ngIf="c.userId === (authService.user$ | async)?.uid"
+                        class="action edit"
+                        (click)="startEditComment(c)">
+                        ✏ Editar
+                      </span>
+
+                      <!-- Eliminar (solo autor) -->
+                      <span
+                        *ngIf="c.userId === (authService.user$ | async)?.uid"
+                        class="action delete"
+                        (click)="confirmDeleteComment(post, c)">
+                        🗑 Eliminar
+                      </span>
+
+                      <span class="comment-date ms-auto">
+                        {{ c.createdAt | date:'short' }}
+                      </span>
+
+                    </div>
+                  </ng-template>
+                  <!-- /Modo vista -->
+
+                  <!-- Respuestas existentes -->
+                  <div *ngIf="repliesMap[c.id!]?.length" class="replies-list mt-2 ms-3">
+                    <div *ngFor="let reply of repliesMap[c.id!]"
+                         class="comment-item d-flex gap-2 mb-1">
+                      <img [src]="reply.userAvatar || 'assets/default-avatar.png'"
+                           class="avatar-img"
+                           style="width:28px; height:28px;"
+                           (click)="goToProfile(reply.userId)" />
+                      <div>
+                        <strong (click)="goToProfile(reply.userId)"
+                                style="cursor:pointer; font-size:12px">
+                          {{ reply.userName }}
+                        </strong>
+<p style="font-size:13px; margin:2px 0">
+  <ng-container *ngFor="let part of getCommentWithMentions(reply.text)">
+    <span *ngIf="part.isMention"
+          class="mention-tag"
+          (click)="goToMentionedUser(part.userName)">
+      {{ part.text }}
+    </span>
+    <span *ngIf="!part.isMention">{{ part.text }}</span>
+  </ng-container>
+</p>                        <span
+                          *ngIf="reply.userId === (authService.user$ | async)?.uid"
+                          class="action delete"
+                          style="font-size:11px; cursor:pointer;"
+                          (click)="deleteReply(post, c, reply)">
+                          🗑 Eliminar respuesta
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- /Respuestas -->
+
+                  <!-- Caja responder -->
+                  <div *ngIf="activeReplyCommentId === c.id"
+                       class="mt-2 ms-3 d-flex gap-2">
+                    <textarea
+                      [(ngModel)]="replyDrafts[c.id!]"
+                      class="form-control"
+                      rows="1"
+                      placeholder="Escribe una respuesta...">
+                    </textarea>
+                    <button class="btn btn-sm btn-primary"
+                            (click)="replyToComment(post, c)">
+                      Enviar
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+            <!-- /ngFor comentarios -->
+
+          </ng-container>
+
+          <ng-template #noCommentsLocalTpl>
+            <p class="text-muted">Sé el primero en comentar.</p>
+          </ng-template>
+
+          <!-- Textarea comentario con menciones -->
+          <div class="mention-wrapper">
+            <textarea
+              [(ngModel)]="draftComments[post.id!]"
+              class="form-control mt-2"
+              rows="2"
+              placeholder="Escribe un comentario... @ para etiquetar"
+              (input)="onCommentInput($event, post.id!)">
+            </textarea>
+            <div *ngIf="mentionActive && mentionResults.length" class="mention-dropdown">
+              <div *ngFor="let u of mentionResults" class="mention-option"
+                   (mousedown)="selectMention(u, '', post.id!)">
+                <img [src]="u.avatar || 'assets/default-avatar.png'" class="mention-avatar">
+                <span class="mention-name">{{ u.userName }}</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            class="btn btn-success mt-2 w-100"
+            (click)="addComment(post, draftComments[post.id!]); draftComments[post.id!] = ''">
+            Comentar
+          </button>
+
+        </div>
+        <!-- /COMMENTS PANEL -->
+
+      </div>
+      <!-- /ngFor posts -->
+
+    </ng-container>
+  </ng-container>
+  <!-- /POSTS -->
+
+  <!-- ESTADOS -->
+  <ng-template #noPostsTpl>
+    <p class="no-posts-text text-center">No hay publicaciones todavía.</p>
+  </ng-template>
+
+  <ng-template #loadingTpl>
+    <p class="loading-text text-center">Cargando publicaciones...</p>
+  </ng-template>
+
+  <!-- TOAST -->
+  <div class="toast" *ngIf="toastMessage">{{ toastMessage }}</div>
+
+  <!-- ============================================
+       MODAL REACCIONES — POST
+  ============================================ -->
+  <div *ngIf="showReactionsModal"
+       class="reactions-modal-overlay"
+       (click)="showReactionsModal = false">
+    <div class="reactions-modal" (click)="$event.stopPropagation()">
+
+      <div class="reactions-modal-header">
+        <h4>Reacciones</h4>
+        <button class="close-modal-btn" (click)="showReactionsModal = false">✕</button>
+      </div>
+
+      <div *ngIf="reactionsList.length === 0" class="text-muted p-3 text-center">
+        Nadie ha reaccionado aún.
+      </div>
+
+      <div *ngFor="let r of reactionsList" class="reaction-user-row">
+        <img [src]="r.userAvatar || 'assets/default-avatar.png'" class="reaction-user-avatar" />
+        <div class="reaction-user-info">
+          <span class="reaction-user-name">{{ r.userName }}</span>
+        </div>
+        <span class="reaction-user-emoji">{{ getReactionEmoji(r.type) }}</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================
+       MODAL REACCIONES — COMENTARIO
+  ============================================ -->
+  <div *ngIf="showCommentReactionsModal"
+       class="reactions-modal-overlay"
+       (click)="showCommentReactionsModal = false">
+    <div class="reactions-modal" (click)="$event.stopPropagation()">
+
+      <div class="reactions-modal-header">
+        <h4>Reacciones al comentario</h4>
+        <button class="close-modal-btn" (click)="showCommentReactionsModal = false">✕</button>
+      </div>
+
+      <div *ngIf="commentReactionsList.length === 0" class="text-muted p-3 text-center">
+        Nadie ha reaccionado aún.
+      </div>
+
+      <div *ngFor="let r of commentReactionsList" class="reaction-user-row">
+        <img [src]="r.userAvatar || 'assets/default-avatar.png'" class="reaction-user-avatar" />
+        <div class="reaction-user-info">
+          <span class="reaction-user-name">{{ r.userName }}</span>
+        </div>
+        <span class="reaction-user-emoji">{{ getReactionEmoji(r.type) }}</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================
+       MODAL REPOST CON MENCIONES — POST
+  ============================================ -->
+  <div *ngIf="showRepostModal"
+       class="reactions-modal-overlay"
+       (click)="showRepostModal = false">
+    <div class="reactions-modal repost-modal" (click)="$event.stopPropagation()">
+
+      <div class="reactions-modal-header">
+        <h4 style="margin:0;">🔁 Repostear publicación</h4>
+        <button class="close-modal-btn" (click)="showRepostModal = false">✕</button>
+      </div>
+
+      <!-- Preview post original -->
+      <div class="repost-preview">
+        <img *ngIf="repostTargetPost?.userAvatar"
+             [src]="repostTargetPost?.userAvatar"
+             class="repost-preview-avatar">
+        <div>
+          <strong>{{ repostTargetPost?.userName }}</strong>
+          <p>{{ repostTargetPost?.content | slice:0:80 }}{{ (repostTargetPost?.content?.length ?? 0) > 80 ? '...' : '' }}</p>
+        </div>
+      </div>
+
+      <!-- Campo descripción con detección de @ -->
+      <div class="mention-wrapper">
+        <textarea
+          class="form-control repost-textarea"
+          rows="3"
+          placeholder="¿Qué piensas? Escribe @ para etiquetar a alguien…"
+          [value]="repostDescription"
+          (input)="onRepostDescInput($event)">
+        </textarea>
+        <div *ngIf="mentionActive && mentionResults.length" class="mention-dropdown">
+          <div *ngFor="let u of mentionResults" class="mention-option"
+               (mousedown)="selectMention(u, 'repostDescription')">
+            <img [src]="u.avatar || 'assets/default-avatar.png'" class="mention-avatar">
+            <span class="mention-name">{{ u.userName }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tags seleccionados -->
+      <div *ngIf="repostTags.length" class="repost-tags">
+        <span *ngFor="let tag of repostTags" class="repost-tag-chip">
+          @{{ tag }}
+          <span class="remove-tag" (click)="removeRepostTag(tag)">×</span>
+        </span>
+      </div>
+
+      <!-- Acciones -->
+      <div class="repost-actions">
+        <button class="btn btn-secondary btn-sm" (click)="showRepostModal = false">
+          Cancelar
+        </button>
+        <button class="btn btn-primary btn-sm" (click)="confirmRepost()">
+          🔁 Repostear
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,139 @@
+<div class="friends-page" (click)="closeMenus()">
+
+  <!-- ── HEADER ── -->
+  <div class="friends-header">
+    <h2 class="page-title">Amigos</h2>
+  </div>
+
+  <!-- ── TABS ── -->
+  <div class="tabs">
+    <button
+      class="tab"
+      [class.active]="activeTab === 'friends'"
+      (click)="setTab('friends')"
+    >
+      Amigos
+    </button>
+    <button
+      class="tab"
+      [class.active]="activeTab === 'suggestions'"
+      (click)="setTab('suggestions')"
+    >
+      Sugerencias
+      <span class="badge" *ngIf="pendingReceived.length > 0">{{ pendingReceived.length }}</span>
+    </button>
+  </div>
+
+  <!-- ── CARGANDO ── -->
+  <div class="state-box" *ngIf="loading">
+    <i class="bi bi-hourglass-split"></i>
+    <p>Cargando...</p>
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- ═══════════════════════ PESTAÑA: AMIGOS ═══════════════════════ -->
+    <div *ngIf="activeTab === 'friends'">
+
+      <div class="search-box">
+        <i class="bi bi-search"></i>
+        <input
+          type="text"
+          placeholder="Buscar amigos"
+          [(ngModel)]="friendSearchTerm"
+          (ngModelChange)="applyFriendSearch()"
+        >
+      </div>
+
+      <h3 class="count-title">{{ friends.length }} amigo{{ friends.length === 1 ? '' : 's' }}</h3>
+
+      <div class="state-box" *ngIf="friendsFiltered.length === 0">
+        <i class="bi bi-people"></i>
+        <p>No se encontraron amigos.</p>
+      </div>
+
+      <div class="person-row" *ngFor="let person of friendsFiltered">
+        <img
+          class="avatar"
+          [src]="person.photoURL || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+          (click)="goToProfile(person.id)"
+        >
+        <div class="info" (click)="goToProfile(person.id)">
+          <h4>{{ person.displayName }}</h4>
+          <p class="mutual" *ngIf="person.mutualCount > 0">
+            {{ person.mutualCount }} amigo{{ person.mutualCount === 1 ? '' : 's' }} en común
+          </p>
+        </div>
+
+        <div class="menu-wrapper">
+          <button class="dots-btn" (click)="toggleMenu(person.id, $event)">
+            <i class="bi bi-three-dots"></i>
+          </button>
+
+          <div class="dropdown" *ngIf="openMenuFor === person.id" (click)="$event.stopPropagation()">
+            <div class="dropdown-item" (click)="messageFriend(person)">
+              <i class="bi bi-messenger"></i> Enviar mensaje
+            </div>
+            <div class="dropdown-item danger" (click)="removeFriend(person)">
+              <i class="bi bi-person-dash"></i> Eliminar amigo
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════ PESTAÑA: SUGERENCIAS ═══════════════════════ -->
+    <div *ngIf="activeTab === 'suggestions'">
+
+      <!-- Solicitudes de amistad -->
+      <ng-container *ngIf="pendingReceived.length > 0">
+        <h3 class="section-title">Solicitudes de amistad</h3>
+
+        <div class="person-card" *ngFor="let person of pendingReceived">
+          <img
+            class="avatar"
+            [src]="person.photoURL || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+            (click)="goToProfile(person.id)"
+          >
+          <div class="info" (click)="goToProfile(person.id)">
+            <h4>{{ person.displayName }}</h4>
+            <p class="mutual" *ngIf="person.mutualCount > 0">
+              {{ person.mutualCount }} amigo{{ person.mutualCount === 1 ? '' : 's' }} en común
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn-confirm" (click)="confirmRequest(person)">Confirmar</button>
+            <button class="btn-remove" (click)="declineRequest(person)">Eliminar</button>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Personas que quizá conozcas -->
+      <h3 class="section-title">Personas que quizá conozcas</h3>
+
+      <div class="state-box" *ngIf="suggestions.length === 0">
+        <i class="bi bi-people"></i>
+        <p>No hay sugerencias por ahora.</p>
+      </div>
+
+      <div class="person-card" *ngFor="let person of suggestions">
+        <img
+          class="avatar"
+          [src]="person.photoURL || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+          (click)="goToProfile(person.id)"
+        >
+        <div class="info" (click)="goToProfile(person.id)">
+          <h4>{{ person.displayName }}</h4>
+          <p class="mutual" *ngIf="person.mutualCount > 0">
+            {{ person.mutualCount }} amigo{{ person.mutualCount === 1 ? '' : 's' }} en común
+          </p>
+        </div>
+        <div class="actions">
+          <button class="btn-confirm" (click)="sendRequest(person)">Agregar a amigos</button>
+          <button class="btn-remove" (click)="dismissSuggestion(person)">Eliminar</button>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+</div>
