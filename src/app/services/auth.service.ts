@@ -99,11 +99,28 @@ export class AuthService {
     return snap.exists();
   }
 
-  async isProfileComplete(uid: string) {
+    async isProfileComplete(uid: string) {
     const snap = await getDoc(doc(this.firestore, `users/${uid}`));
     if (!snap.exists()) return false;
+    return this.hasCompleteProfile(snap.data());
+  }
+
+  /**
+   * Decide si el usuario puede entrar a las rutas privadas, con una sola lectura:
+   *  - 'blocked'    → un moderador bloqueó la cuenta
+   *  - 'incomplete' → falta completar el perfil
+   *  - 'ok'         → puede continuar
+   */
+  async checkAccess(uid: string): Promise<'blocked' | 'incomplete' | 'ok'> {
+    const snap = await getDoc(doc(this.firestore, `users/${uid}`));
+    if (!snap.exists()) return 'incomplete';
 
     const data: any = snap.data();
+    if (data['blocked'] === true) return 'blocked';
+    return this.hasCompleteProfile(data) ? 'ok' : 'incomplete';
+  }
+
+  private hasCompleteProfile(data: any): boolean {
     const isStudent = (data['email'] || '').endsWith('@estudiante.uniajc.edu.co');
     const hasBasics = !!data['fechaNacimiento'] && !!data['ciudad'] && !!data['departamento'];
 

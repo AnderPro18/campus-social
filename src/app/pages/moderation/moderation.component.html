@@ -1,0 +1,156 @@
+<div class="page-container moderation-page">
+  <h2 class="page-title">Panel de moderación</h2>
+
+  <div class="tabs">
+    <button [class.active]="tab() === 'reports'" (click)="setTab('reports')">Reportes</button>
+    <button [class.active]="tab() === 'blocked'" (click)="setTab('blocked')">Bloqueados</button>
+    <button [class.active]="tab() === 'log'" (click)="setTab('log')">Acciones</button>
+  </div>
+
+  <p class="error-msg" *ngIf="error() && !pending()">{{ error() }}</p>
+
+  <!-- ═════════════ REPORTES PENDIENTES ═════════════ -->
+  <ng-container *ngIf="tab() === 'reports'">
+    <ng-container *ngIf="reports$ | async as reports; else loadingTpl">
+
+      <div *ngIf="reports.length === 0" class="empty-state">
+        No hay reportes pendientes. 🎉
+      </div>
+
+      <div class="report-card" *ngFor="let report of reports">
+        <div class="report-meta">
+          <span class="report-type">{{ typeLabels[report.itemType] }}</span>
+          <span class="report-reason">{{ reasonLabels[report.reason] }}</span>
+          <span class="report-date">{{ toDate(report.createdAt) | date:'short' }}</span>
+        </div>
+
+        <!-- Contenido reportado -->
+        <div class="preview" *ngIf="previews()[report.id!] as p; else previewLoading">
+
+          <p class="preview-missing" *ngIf="!p.exists">
+            {{ p.error ? 'No se pudo cargar el contenido.' : 'El contenido ya no existe (fue eliminado).' }}
+          </p>
+
+          <ng-container *ngIf="p.exists">
+            <ng-container *ngIf="p.user; else contentTpl">
+              <div class="user-preview">
+                <img *ngIf="p.user.photoURL" [src]="p.user.photoURL" class="user-avatar" alt="">
+                <div>
+                  <strong>{{ p.user.displayName }}</strong>
+                  <span class="badge-blocked" *ngIf="p.user.blocked">Bloqueado</span>
+                  <div class="muted">{{ p.user.email }}</div>
+                  <div class="muted" *ngIf="p.user.careerOrArea">{{ p.user.careerOrArea }}</div>
+                  <div *ngIf="p.user.bio">{{ p.user.bio }}</div>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-template #contentTpl>
+              <div class="muted">
+                Autor:
+                <a *ngIf="p.ownerId" [routerLink]="['/user', p.ownerId]">{{ p.ownerName || p.ownerId }}</a>
+              </div>
+              <p class="preview-text" *ngIf="p.text">{{ p.text }}</p>
+              <img *ngIf="p.imageUrl" [src]="p.imageUrl" class="preview-media" alt="">
+              <video *ngIf="p.videoUrl" [src]="p.videoUrl" class="preview-media" controls preload="metadata"></video>
+            </ng-template>
+
+            <a *ngIf="report.itemType === 'post'" class="view-link" [routerLink]="['/post', report.itemId]">
+              Abrir publicación
+            </a>
+            <a *ngIf="report.itemType === 'user'" class="view-link" [routerLink]="['/user', report.itemId]">
+              Ver perfil
+            </a>
+          </ng-container>
+        </div>
+        <ng-template #previewLoading>
+          <p class="muted">Cargando contenido...</p>
+        </ng-template>
+
+        <p class="report-details" *ngIf="report.details">"{{ report.details }}"</p>
+        <p class="report-reporter"><strong>Reportado por:</strong> {{ report.reporterId }}</p>
+
+        <!-- Acciones -->
+        <div class="report-actions" *ngIf="pending()?.id !== report.id">
+          <button class="btn btn-secondary" (click)="start(report, 'dismiss')">Descartar</button>
+          <button class="btn btn-secondary" (click)="start(report, 'review')">Marcar revisado</button>
+          <button class="btn btn-danger" *ngIf="canDelete(report)" (click)="start(report, 'delete')">
+            Eliminar contenido
+          </button>
+          <button class="btn btn-danger" *ngIf="canBlock(report)" (click)="start(report, 'block')">
+            Bloquear usuario
+          </button>
+        </div>
+
+        <!-- Confirmación -->
+        <div class="confirm-panel" *ngIf="pending()?.id === report.id">
+          <p class="confirm-title" [ngSwitch]="pending()?.kind">
+            <ng-container *ngSwitchCase="'dismiss'">Descartar este reporte</ng-container>
+            <ng-container *ngSwitchCase="'review'">Marcar este reporte como revisado</ng-container>
+            <ng-container *ngSwitchCase="'delete'">Eliminar el contenido reportado (no se puede deshacer)</ng-container>
+            <ng-container *ngSwitchCase="'block'">Bloquear al usuario (no podrá usar la plataforma)</ng-container>
+          </p>
+          <textarea
+            rows="2"
+            [(ngModel)]="note"
+            [placeholder]="pending()?.kind === 'block' ? 'Motivo del bloqueo (obligatorio)' : 'Nota (opcional)'">
+          </textarea>
+          <p class="error-msg" *ngIf="error()">{{ error() }}</p>
+          <div class="report-actions">
+            <button class="btn btn-secondary" [disabled]="processingId() === report.id" (click)="cancel()">
+              Cancelar
+            </button>
+            <button class="btn btn-primary" [disabled]="!canConfirm()" (click)="confirm(report)">
+              {{ processingId() === report.id ? 'Procesando...' : 'Confirmar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
+  </ng-container>
+
+  <!-- ═════════════ USUARIOS BLOQUEADOS ═════════════ -->
+  <ng-container *ngIf="tab() === 'blocked'">
+    <ng-container *ngIf="blocked$ | async as users; else loadingTpl">
+      <div *ngIf="users.length === 0" class="empty-state">No hay usuarios bloqueados.</div>
+
+      <div class="report-card" *ngFor="let u of users">
+        <strong>{{ u.displayName || u.id }}</strong>
+        <div class="muted">{{ u.email }}</div>
+        <p class="report-details" *ngIf="u.blockReason">Motivo: {{ u.blockReason }}</p>
+        <div class="muted" *ngIf="toDate(u.blockedAt)">
+          Bloqueado el {{ toDate(u.blockedAt) | date:'medium' }}
+        </div>
+        <div class="report-actions">
+          <button class="btn btn-secondary" [disabled]="processingId() === u.id" (click)="unblock(u)">
+            {{ processingId() === u.id ? 'Procesando...' : 'Desbloquear' }}
+          </button>
+        </div>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- ═════════════ REGISTRO DE ACCIONES ═════════════ -->
+  <ng-container *ngIf="tab() === 'log'">
+    <ng-container *ngIf="actions$ | async as actions; else loadingTpl">
+      <div *ngIf="actions.length === 0" class="empty-state">Aún no hay acciones registradas.</div>
+
+      <div class="log-item" *ngFor="let a of actions">
+        <div>
+          <strong>{{ actionLabels[a.action] }}</strong>
+          <span class="muted"> · {{ typeLabels[a.targetType] }}</span>
+        </div>
+        <div class="muted">
+          {{ a.adminName }} · {{ toDate(a.createdAt) | date:'medium' }}
+        </div>
+        <div class="muted target-path" *ngIf="a.targetPath">{{ a.targetPath }}</div>
+        <div *ngIf="a.note" class="log-note">"{{ a.note }}"</div>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <ng-template #loadingTpl>
+    <p class="text-muted">Cargando...</p>
+  </ng-template>
+</div>

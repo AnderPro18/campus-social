@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, Renderer2 } from '@angular/core';
+import { Component, OnInit, inject, Renderer2, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Firestore, collection, collectionData, addDoc, query, orderBy, serverTimestamp, Timestamp, 
@@ -88,6 +88,8 @@ export class FeedComponent implements OnInit {
   savedService = inject(SavedService);
   renderer = inject(Renderer2);
   private auth = inject(AuthService);
+  private cdr = inject(ChangeDetectorRef);
+  private zone = inject(NgZone);
 
   commentsMap: Record<string, CommentItem[]> = {};
   currentUid: string | null = null;
@@ -381,14 +383,10 @@ repostTags: string[] = [];
       repostsCount: 0,
     };
 
-    console.log('PUBLICANDO:', payload);
-
     const ref = await addDoc(
       collection(this.firestore, 'posts'),
       payload
     );
-
-    console.log('POST CREADO:', ref.id);
 
     // 🔔 Notificar a amigos aceptados
     try {
@@ -469,7 +467,7 @@ repostTags: string[] = [];
     const idx = arr.findIndex((p) => p.id === postId);
     if (idx === -1) return;
     const copy = [...arr];
-    copy[idx][field] = exactValue;
+    copy[idx] = { ...copy[idx], [field]: exactValue };
     this.postsSubject.next(copy);
   }
 
@@ -479,7 +477,7 @@ repostTags: string[] = [];
     if (idx === -1) return;
     const copy = [...arr];
     const cur = copy[idx][field] || 0;
-    copy[idx][field] = Math.max(0, cur + delta);
+    copy[idx] = { ...copy[idx], [field]: Math.max(0, cur + delta) };
     this.postsSubject.next(copy);
   }
 
@@ -589,18 +587,30 @@ getReactionLabel(type: ReactionType | null): string {
     const ref = doc(this.firestore, `posts/${post.id}/reactions/${uid}`);
     const col = collection(this.firestore, `posts/${post.id}/reactions`);
     const prev = this.getLocalReaction(post.id!, uid);
-    const avatarFromDoc = await this.getUserAvatar(user.uid);
-    const avatar = avatarFromDoc || user.photoURL || '';
 
-    if (reaction === null) {
-      this.setLocalReaction(post.id!, uid, null);
-      if (prev) this.updateLocalDelta(post.id!, 'likesCount', -1);
-    } else {
-      this.setLocalReaction(post.id!, uid, reaction);
-      if (!prev) this.updateLocalDelta(post.id!, 'likesCount', +1);
-    }
+    // 🔧 FIX (timing Zone.js/esbuild): la actualización optimista se
+    // programa con setTimeout(0) — esto la saca del microtask actual y la
+    // reprograma como un nuevo macrotask, que Zone.js SÍ detecta de forma
+    // confiable para disparar un ciclo de detección de cambios completo.
+    // Sin esto, el estado se actualizaba correctamente en memoria pero el
+    // DOM no se repintaba hasta la siguiente interacción del usuario.
+    setTimeout(() => {
+      this.zone.run(() => {
+        if (reaction === null) {
+          this.setLocalReaction(post.id!, uid, null);
+          if (prev) this.updateLocalDelta(post.id!, 'likesCount', -1);
+        } else {
+          this.setLocalReaction(post.id!, uid, reaction);
+          if (!prev) this.updateLocalDelta(post.id!, 'likesCount', +1);
+        }
+        this.cdr.detectChanges();
+      });
+    }, 0);
 
     try {
+      const avatarFromDoc = await this.getUserAvatar(user.uid);
+      const avatar = avatarFromDoc || user.photoURL || '';
+
       const snap = await getDoc(ref);
       if (reaction === null) {
         if (snap.exists()) await deleteDoc(ref);
@@ -630,12 +640,19 @@ getReactionLabel(type: ReactionType | null): string {
       
 
       const all = await getDocs(col);
-      this.updateLocalExact(post.id!, 'likesCount', all.size);
       const temp: Record<string, ReactionType> = {};
       all.forEach((d) => (temp[d.id] = d.data()['type']));
-      this.localReactions[post.id!] = temp;
+
+      setTimeout(() => {
+        this.zone.run(() => {
+          this.updateLocalExact(post.id!, 'likesCount', all.size);
+          this.localReactions[post.id!] = temp;
+          this.cdr.detectChanges();
+        });
+      }, 0);
     } catch (err) {
-      console.error(err);
+      console.error('❌ Error al reaccionar al post:', err);
+      this.zone.run(() => this.showToast('No se pudo guardar la reacción. Revisa tu conexión.'));
     }
   }
 
@@ -1214,6 +1231,7 @@ async selectCommentReaction(post: any, comment: any, reactionType: string) {
   }
 
   this.commentReactionMenuId = null;
+  setTimeout(() => this.zone.run(() => this.cdr.detectChanges()), 0);
 }
 
 startCommentHold(post: any, c: CommentItem, event: any) {
@@ -1264,6 +1282,7 @@ async toggleQuickCommentReaction(post: any, c: CommentItem) {
       createdAt: serverTimestamp(),
     });
   }
+  setTimeout(() => this.zone.run(() => this.cdr.detectChanges()), 0);
 }
 
 async showCommentReactions(comment: CommentItem) {

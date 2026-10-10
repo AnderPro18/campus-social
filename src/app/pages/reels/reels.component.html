@@ -46,6 +46,13 @@
       <img *ngIf="reel.avatarUrl" [src]="reel.avatarUrl" class="avatar-img"
            (click)="goToProfile(reel.uid)" style="cursor:pointer">
       <strong (click)="goToProfile(reel.uid)" style="cursor:pointer">{{ reel.userName }}</strong>
+      <app-report-button
+        style="margin-left:auto"
+        itemType="reel"
+        [itemId]="reel.id!"
+        [itemPath]="'reels/' + reel.id"
+        [itemOwnerId]="reel.uid">
+      </app-report-button>
     </div>
 
     <p>
@@ -218,6 +225,14 @@
                     🗑 Eliminar
                   </span>
 
+                  <!-- Reportar comentario -->
+                  <app-report-button
+                    itemType="comment"
+                    [itemId]="c.id!"
+                    [itemPath]="'reels/' + reel.id + '/comments/' + c.id"
+                    [itemOwnerId]="c.userId">
+                  </app-report-button>
+
                   <span class="comment-date ms-auto">{{ c.createdAt | date:'short' }}</span>
                 </div>
               </ng-template>
@@ -247,6 +262,12 @@
                           (click)="deleteReply(reel, c, reply)">
                       🗑 Eliminar respuesta
                     </span>
+                    <app-report-button
+                      itemType="reply"
+                      [itemId]="reply.id!"
+                      [itemPath]="'reels/' + reel.id + '/comments/' + c.id + '/replies/' + reply.id"
+                      [itemOwnerId]="reply.userId">
+                    </app-report-button>
                   </div>
                 </div>
               </div>

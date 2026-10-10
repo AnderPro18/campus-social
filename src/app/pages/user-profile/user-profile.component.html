@@ -83,6 +83,14 @@
               <i class="bi bi-messenger"></i> Mensaje
             </button>
 
+                        <app-report-button
+              itemType="user"
+              [itemId]="profileUser.id"
+              [itemPath]="'users/' + profileUser.id"
+              [itemOwnerId]="profileUser.id"
+              label="Reportar usuario">
+            </app-report-button>
+
           </div>
         </div>
       </div>

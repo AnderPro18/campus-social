@@ -6,8 +6,8 @@
    ============================================================ */
 
 .post-card {
-  @include m.neu-raised(var(--r-lg));
-  @include m.lift-on-hover(-3px);
+  @include m.glass-surface(var(--r-lg));
+  @include m.glow-on-hover(var(--glow-ring-blue));
   padding: var(--sp-4);
   margin-bottom: var(--sp-4);
   color: var(--text-primary);
@@ -17,6 +17,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.post-report {
+  margin-left: auto;
 }
 
 .post-avatar {
@@ -30,6 +34,7 @@
   justify-content: center;
   font-weight: bold;
   flex-shrink: 0;
+  box-shadow: var(--edge-glow-blue);
 }
 
 .post-text {

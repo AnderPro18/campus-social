@@ -95,14 +95,57 @@
   box-shadow: 0 6px 18px var(--gold-glow);
 }
 
-// Superficie de "cristal esmerilado" — paneles/modales flotantes premium
-@mixin glass-surface($radius: var(--r-lg)) {
-  background: color-mix(in srgb, var(--surface-alt) 82%, transparent);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
+// Superficie de "cristal esmerilado" — ahora la superficie insignia:
+// vidrio + borde luminoso de marca + realce superior tipo "panel HUD"
+@mixin glass-surface($radius: var(--r-lg), $glow: var(--edge-glow-blue)) {
+  position: relative;
+  background: linear-gradient(180deg, var(--glass-tint-strong), var(--glass-tint));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
   border-radius: $radius;
-  border: 1px solid color-mix(in srgb, var(--neu-light) 50%, transparent);
-  box-shadow: var(--elev-3);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--elev-2), #{$glow};
+  transition: var(--theme-transition), box-shadow .3s ease, transform .3s ease, border-color .3s ease;
+
+  // filo superior luminoso, como un borde biselado de vidrio
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(150deg, var(--glass-highlight), transparent 40%, transparent 70%, var(--glass-border-edge));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+// Variante dorada del vidrio — para elementos "premium"/destacados
+@mixin glass-surface-gold($radius: var(--r-lg)) {
+  @include glass-surface($radius, var(--edge-glow-gold));
+}
+
+// Borde/realce luminoso independiente, para aplicar sobre cualquier superficie
+@mixin glow-edge($glow: var(--edge-glow-blue)) {
+  box-shadow: var(--elev-1), #{$glow};
+  transition: box-shadow .3s ease, border-color .3s ease;
+}
+
+// Halo de foco/hover tipo "escaneo" — para tarjetas interactivas futuristas
+@mixin glow-on-hover($ring: var(--glow-ring-blue)) {
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--elev-2), 0 0 0 1px #{$ring}, 0 0 30px #{$ring};
+  }
+}
+
+// Texto con leve resplandor de neón de marca — para cifras/títulos destacados
+@mixin neon-text($color: var(--brand-blue-light)) {
+  color: $color;
+  text-shadow: 0 0 12px color-mix(in srgb, $color 55%, transparent);
 }
 
 // Anillo de foco accesible, con halo suave a juego con la marca

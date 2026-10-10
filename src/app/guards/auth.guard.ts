@@ -23,8 +23,14 @@ export class AuthGuard implements CanActivate {
           return of(false);
         }
 
-        return this.auth.isProfileComplete(user.uid).then(complete => {
-          if (!complete) {
+    return this.auth.checkAccess(user.uid).then(async access => {
+          if (access === 'blocked') {
+            // Cuenta bloqueada por un moderador: se cierra la sesión y se avisa en el login
+            await this.auth.logout();
+            this.router.navigate(['/login'], { queryParams: { blocked: '1' } });
+            return false;
+          }
+          if (access === 'incomplete') {
             this.router.navigate(['/complete-profile']);
             return false;
           }

@@ -1,0 +1,48 @@
+<button class="report-trigger" [class.labeled]="label" (click)="openModal()" [title]="title">
+  🚩<span *ngIf="label"> {{ label }}</span>
+</button>
+
+<div class="report-modal-overlay" *ngIf="modalOpen" (click)="closeModal()">
+  <div class="report-modal-content" (click)="$event.stopPropagation()">
+
+    <ng-container *ngIf="!submitted; else thanksTpl">
+      <div class="report-modal-header">
+        <h4>{{ title }}</h4>
+        <button class="close-btn" (click)="closeModal()">✖</button>
+      </div>
+
+      <p class="report-modal-subtitle">¿Por qué quieres reportar esto?</p>
+
+      <div class="reason-list">
+        <label *ngFor="let r of reasons" class="reason-option">
+          <input type="radio" name="reason" [value]="r[0]" [(ngModel)]="selectedReason">
+          <span>{{ r[1] }}</span>
+        </label>
+      </div>
+
+      <textarea
+        class="details-input"
+        [placeholder]="selectedReason === 'other' ? 'Cuéntanos qué pasó (obligatorio)' : 'Detalles adicionales (opcional)'"
+        rows="3"
+        [(ngModel)]="details">
+      </textarea>
+
+      <p class="report-error" *ngIf="error">{{ error }}</p>
+
+      <button
+        class="btn btn-primary w-100"
+        [disabled]="!canSubmit"
+        (click)="submit()">
+        {{ submitting ? 'Enviando...' : 'Enviar reporte' }}
+      </button>
+    </ng-container>
+
+    <ng-template #thanksTpl>
+      <div class="report-thanks">
+        <p>Gracias, tu reporte fue enviado. Un moderador lo revisará pronto.</p>
+        <button class="btn btn-primary" (click)="closeModal()">Cerrar</button>
+      </div>
+    </ng-template>
+
+  </div>
+</div>

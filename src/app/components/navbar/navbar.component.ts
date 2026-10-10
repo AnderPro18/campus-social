@@ -16,6 +16,7 @@ import {
   updateDoc
 } from '@angular/fire/firestore';
 import { firstValueFrom } from 'rxjs';
+import { ModerationService } from '../../services/moderation.service';
 
 @Component({
   selector: 'app-navbar',
@@ -32,8 +33,10 @@ export class NavbarComponent {
   private profileState = inject(ProfileStateService);
   private firestore = inject(Firestore);
   private chatService = inject(ChatService);
+  private moderation = inject(ModerationService);
 
   user$ = this.auth.user$;
+    isModerator$ = this.moderation.isModerator$;
   unreadChatsCount$ = this.chatService.getUnreadChatsCount();
 
   isMenuOpen = false;
@@ -167,9 +170,19 @@ this.reelResults = all.filter((r: any) =>
 
 loadNotifications() {
 
-  this.auth.user$.subscribe(user => {
+  this.auth.user$.subscribe(async user => {
 
     if (!user) return;
+
+    // Fuerza a que el token de auth esté 100% adjunto antes de abrir
+    // el listener — evita el "Missing or insufficient permissions"
+    // transitorio justo después de un refresh de página.
+    try {
+      await user.getIdToken();
+    } catch (err) {
+      console.error('No se pudo refrescar el token antes de escuchar notificaciones:', err);
+      return;
+    }
 
     const ref = collection(
       this.firestore,

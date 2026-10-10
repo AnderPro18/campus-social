@@ -7,6 +7,7 @@ import { ReelsComponent } from './pages/reels/reels.component';
 import { FriendsComponent } from './pages/friends/friends.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { SavedComponent } from './pages/saved/saved.component';
+import { AdminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -44,6 +45,14 @@ export const routes: Routes = [
   loadComponent: () =>
     import('./pages/post-detail/post-detail.component') 
       .then(m => m.PostDetailComponent)
+},
+
+{
+  path: 'moderation',
+  loadComponent: () =>
+    import('./pages/moderation/moderation.component')
+      .then(m => m.ModerationComponent),
+  canActivate: [AdminGuard]
 },
 
   { path: '**', redirectTo: '' }

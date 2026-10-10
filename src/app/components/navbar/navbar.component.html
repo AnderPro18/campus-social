@@ -192,6 +192,7 @@
         <div class="menu" *ngIf="isMenuOpen">
           <div class="menu-item" (click)="go('/profile')">Mi perfil</div>
           <div class="menu-item" (click)="go('/saved')">Guardados</div>
+          <div class="menu-item" *ngIf="isModerator$ | async" (click)="go('/moderation')">Panel de moderación</div>
           <div class="menu-item logout" (click)="logout()">Cerrar sesión</div>
         </div>
       </div>
