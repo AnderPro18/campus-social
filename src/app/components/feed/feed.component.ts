@@ -9,6 +9,7 @@ import { SavedService } from '../../services/saved.service';
 import { PostService } from '../../services/post.service';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
+import { ReportService } from '../../services/report.service';
 // ------------------------------------------------------
 // INTERFACES
 // ------------------------------------------------------
@@ -78,6 +79,7 @@ export class FeedComponent implements OnInit {
   private router = inject(Router);
   private commentReactions: Record<string, Record<string, ReactionType>> = {};
   private notificationService = inject(NotificationService);
+    private reportService = inject(ReportService);
 
   newContent = '';
   selectedFileBase64: string | null = null;
@@ -943,18 +945,28 @@ async confirmRepost() {
     this.postsSubject.next(this.postsSubject.getValue().filter((p) => p.id !== id));
   }
 
-  async reportPost(id: string) {
+   async reportPost(id: string) {
     const reason = prompt('Motivo del reporte:');
     if (!reason?.trim()) return;
-    const user = await firstValueFrom(this.authService.user$);
-    await addDoc(collection(this.firestore, 'reports'), {
-      postId: id,
-      reason: reason.trim(),
-      reporterId: user?.uid,
-      reporterName: user?.displayName,
-      createdAt: serverTimestamp(),
-    });
-    alert('Reporte enviado.');
+
+    // Si es un repost, se reporta la publicación original
+    const post: any = this.postsSubject.getValue().find((p) => p.id === id);
+    const realId = post ? this.getRealPostId(post) : id;
+
+    try {
+      await this.reportService.submitReport({
+        itemType: 'post',
+        itemId: realId,
+        itemPath: `posts/${realId}`,
+        itemOwnerId: post?.type === 'repost' ? undefined : post?.userId,
+        reason: 'other',
+        details: reason.trim(),
+      });
+      alert('Reporte enviado.');
+    } catch (err) {
+      console.error('Error al enviar el reporte:', err);
+      alert('No se pudo enviar el reporte. Inténtalo de nuevo.');
+    }
   }
 
   async replyToComment(post: any, comment: any) {
