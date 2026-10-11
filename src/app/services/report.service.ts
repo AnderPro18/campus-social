@@ -7,12 +7,12 @@ import {
   updateDoc,
   query,
   where,
-  orderBy,
   collectionData,
   Timestamp,
 } from '@angular/fire/firestore';
 import { Auth } from '@angular/fire/auth';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { Report, ReportPayload, ReportStatus } from '../models/report.model';
 
 @Injectable({ providedIn: 'root' })
@@ -26,23 +26,33 @@ export class ReportService {
     if (!user) throw new Error('Debes iniciar sesión para reportar contenido.');
 
     const reportsRef = collection(this.firestore, 'reports');
-    await addDoc(reportsRef, {
-      ...payload,
-      reporterId: user.uid,
-      status: 'pending' as ReportStatus,
-      createdAt: Timestamp.now(),
-    });
+    // Firestore rechaza los campos con valor `undefined` (por ejemplo "details" cuando
+    // el usuario no escribe nada), así que se quitan antes de guardar.
+    const data = Object.fromEntries(
+      Object.entries({
+        ...payload,
+        reporterId: user.uid,
+        status: 'pending' as ReportStatus,
+        createdAt: Timestamp.now(),
+      }).filter(([, value]) => value !== undefined)
+    );
+
+    await addDoc(reportsRef, data);
   }
 
   /** Solo para el panel de moderación: reportes pendientes, más recientes primero. */
   getPendingReports(): Observable<Report[]> {
     const reportsRef = collection(this.firestore, 'reports');
-    const q = query(
-      reportsRef,
-      where('status', '==', 'pending'),
-      orderBy('createdAt', 'desc')
+    // Solo filtra por estado (no necesita índice compuesto) y ordena en el cliente.
+    const q = query(reportsRef, where('status', '==', 'pending'));
+    return (collectionData(q, { idField: 'id' }) as Observable<Report[]>).pipe(
+      map(reports => [...reports].sort((a, b) => this.millis(b.createdAt) - this.millis(a.createdAt)))
     );
-    return collectionData(q, { idField: 'id' }) as Observable<Report[]>;
+  }
+
+  private millis(value: any): number {
+    if (value?.toMillis) return value.toMillis();
+    return value instanceof Date ? value.getTime() : 0;
   }
 
   /** Marca un reporte como revisado o descartado. */
