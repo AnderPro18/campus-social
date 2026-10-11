@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1791691659907,
+  "timestamp": 1791746029501,
   "index": "/campus-social/index.html",
   "assetGroups": [
     {
@@ -24,7 +24,7 @@
         "/campus-social/chunk-SXE6DKIF.js",
         "/campus-social/chunk-UEOFCZIM.js",
         "/campus-social/index.html",
-        "/campus-social/main-MBPZXMRV.js",
+        "/campus-social/main-M2KH2ATN.js",
         "/campus-social/polyfills-5FDKUQTZ.js",
         "/campus-social/scripts-3XTIANUT.js",
         "/campus-social/styles-DJMI6JCE.css"
@@ -68,8 +68,8 @@
     "/campus-social/chunk-NOMNKOKD.js": "7646dfcd9687ff3eb44b3c91754c78992e16108a",
     "/campus-social/chunk-SXE6DKIF.js": "bb6fe98f8a00af18c1eb0cb0464f55b75b0ef7f6",
     "/campus-social/chunk-UEOFCZIM.js": "7c4d88980c117cb5d271ff464cad42679c140665",
-    "/campus-social/index.html": "53cdbdb48d190c46356e85e47902a3854b189a96",
-    "/campus-social/main-MBPZXMRV.js": "089003258779ccfd7938cca313870c163fde2583",
+    "/campus-social/index.html": "4816c46d07dfff10e6b0dc12c85e7ec613453739",
+    "/campus-social/main-M2KH2ATN.js": "748825afe4359eca78ecdf069f123ba0aeaccf90",
     "/campus-social/media/bootstrap-icons-CVBWLLHT.woff2": "b441fcff939e24fa0906a37b7788788b9fddbb68",
     "/campus-social/media/bootstrap-icons-VQNJTM6Q.woff": "762010c79b4a05e1131fc8fb3b1aeff324d8033f",
     "/campus-social/media/login-bg-ICNS7W5X.png": "f305efff2f2080f2a2f2e37e71b41e8f70acf796",
