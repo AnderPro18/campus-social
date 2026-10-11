@@ -21,6 +21,7 @@ import {
   Timestamp
 } from '@angular/fire/firestore';
 import { PostService, ReactionType } from '../../services/post.service';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-profile',
@@ -34,8 +35,12 @@ export class ProfileComponent {
   auth = inject(AuthService);
   firestore = inject(Firestore);
   postService = inject(PostService);
+  userService = inject(UserService);
 
   user: any = null;
+
+  followerCount = 0;
+  followingCount = 0;
 
   // PERFIL
   bio = '';
@@ -71,20 +76,25 @@ export class ProfileComponent {
   private holdTimer: any;
   private longPressTriggered = false;
 
+
   constructor() {
-    this.auth.user$.subscribe(u => {
+    this.auth.user$.subscribe(async u => {
       this.user = u;
       if (u) {
-        this.loadUserProfile();
+        await this.loadUserProfile();
+        await this.loadFollowCounts();
         this.loadUserPosts();
         this.loadUserReels();
       } else {
         this.myPosts = [];
         this.myReels = [];
         this.profileFeed = [];
+        this.followerCount = 0;
+        this.followingCount = 0;
       }
     });
   }
+
 
   // =============================
   // FECHAS
@@ -126,7 +136,13 @@ export class ProfileComponent {
     this.editing = false;
   }
 
-  
+  async loadFollowCounts() {
+    if (!this.user?.uid) return;
+
+    const counts = await this.userService.getFollowCounts(this.user.uid);
+    this.followerCount = counts.followersCount;
+    this.followingCount = counts.followingCount;
+  }
 
   // =============================
   // REELS DEL PERFIL

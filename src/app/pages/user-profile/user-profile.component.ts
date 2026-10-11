@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { UserService} from '../../services/user.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   Firestore, doc, getDoc, collection, query, where, getDocs, orderBy,
@@ -23,6 +24,7 @@ export class UserProfileComponent implements OnInit {
   private firestore = inject(Firestore);
   private auth = inject(AuthService);
   private chatService = inject(ChatService);
+  private userService = inject(UserService);
 
   profileUser: any = null;
   posts: any[] = [];
@@ -43,6 +45,9 @@ export class UserProfileComponent implements OnInit {
   searchTerm: string = '';
   searchResults: any[] = [];
   searching = false;
+
+  Yalosigue = false;
+  followLoading = false;
 
   async ngOnInit() {
   this.route.paramMap.subscribe(async params => {
@@ -65,6 +70,7 @@ export class UserProfileComponent implements OnInit {
       }
 
       await this.loadProfile(uid);
+      await this.loadFollowState(uid);
       await this.loadFriendStatus(uid);
       await this.loadFriendsCount(uid);
 
@@ -87,7 +93,7 @@ export class UserProfileComponent implements OnInit {
     if (!userSnap.exists()) {
       console.warn('Usuario no encontrado:', uid);
       this.notFound = true;
-      this.loading = false; // 👈 CLAVE
+      this.loading = false;
       return;
     }
 
@@ -125,10 +131,36 @@ export class UserProfileComponent implements OnInit {
     console.error("❌ ERROR LOAD PROFILE:", err);
     this.notFound = true;
   } finally {
-    // 🔥 SIEMPRE se ejecuta
     this.loading = false;
   }
 }
+
+  async loadFollowState(targetUid: string) {
+    if (!this.myUid || !targetUid || this.myUid === targetUid) {
+      this.Yalosigue = false;
+      return;
+    }
+
+    this.Yalosigue = await this.userService.isFollowing(this.myUid, targetUid);
+  }
+
+  async toggleFollow() {
+    if (!this.profileUser?.id || !this.myUid || this.followLoading) return;
+
+    this.followLoading = true;
+    try {
+      if (this.Yalosigue) {
+        await this.userService.unfollow(this.myUid, this.profileUser.id);
+      } else {
+        await this.userService.follow(this.myUid, this.profileUser.id);
+      }
+      this.Yalosigue = !this.Yalosigue;
+    } catch (error) {
+      console.error('Error en seguimiento:', error);
+    } finally {
+      this.followLoading = false;
+    }
+  }
   // ═══════════════════════════════════════════════════════════════════════
   // AMISTAD
   // ═══════════════════════════════════════════════════════════════════════

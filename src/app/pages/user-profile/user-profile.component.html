@@ -79,6 +79,17 @@
               <i class="bi bi-people-fill"></i> Amigos
             </button>
 
+            <button
+              class="btn-action"
+              [class.btn-primary]="!Yalosigue"
+              [class.btn-secondary]="Yalosigue"
+              [disabled]="followLoading"
+              (click)="toggleFollow()"
+            >
+              <i class="bi" [ngClass]="Yalosigue ? 'bi-person-dash-fill' : 'bi-person-plus-fill'"></i>
+              {{ Yalosigue ? 'Dejar de seguir' : 'Seguir' }}
+            </button>
+
             <button class="btn-action btn-message" (click)="sendMessage()">
               <i class="bi bi-messenger"></i> Mensaje
             </button>
