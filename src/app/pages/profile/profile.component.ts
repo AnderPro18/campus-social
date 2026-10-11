@@ -22,11 +22,12 @@ import {
 } from '@angular/fire/firestore';
 import { PostService, ReactionType } from '../../services/post.service';
 import { UserService } from '../../services/user.service';
+import { FollowersComponent } from '../../components/followers/followers.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FollowersComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']
 })
@@ -41,6 +42,7 @@ export class ProfileComponent {
 
   followerCount = 0;
   followingCount = 0;
+  activeFollowList: 'followers' | 'following' | null = null;
 
   // PERFIL
   bio = '';
@@ -142,6 +144,10 @@ export class ProfileComponent {
     const counts = await this.userService.getFollowCounts(this.user.uid);
     this.followerCount = counts.followersCount;
     this.followingCount = counts.followingCount;
+  }
+
+  toggleFollowList(list: 'followers' | 'following') {
+    this.activeFollowList = this.activeFollowList === list ? null : list;
   }
 
   // =============================

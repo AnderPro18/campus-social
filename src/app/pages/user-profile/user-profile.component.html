@@ -100,6 +100,24 @@
   
       <!-- STATS -->
       <div class="stats">
+        <button
+          type="button"
+          class="stat follow-stat"
+          [attr.aria-expanded]="activeFollowList === 'followers'"
+          (click)="toggleFollowList('followers')"
+        >
+          <span class="num">{{ followerCount }}</span>
+          <span class="label">Seguidores</span>
+        </button>
+        <button
+          type="button"
+          class="stat follow-stat"
+          [attr.aria-expanded]="activeFollowList === 'following'"
+          (click)="toggleFollowList('following')"
+        >
+          <span class="num">{{ followingCount }}</span>
+          <span class="label">Seguidos</span>
+        </button>
         <div class="stat">
           <span class="num">{{ posts.length }}</span>
           <span class="label">Publicaciones</span>
@@ -109,6 +127,13 @@
           <span class="label">Reels</span>
         </div>
       </div>
+
+      <app-followers
+        *ngIf="activeFollowList && profileUser.id"
+        [userId]="profileUser.id"
+        [listType]="activeFollowList"
+        (close)="activeFollowList = null"
+      />
   
       <!-- POSTS -->
       <div class="section" *ngIf="posts.length > 0">

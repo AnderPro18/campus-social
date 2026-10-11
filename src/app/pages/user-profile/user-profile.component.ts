@@ -10,11 +10,12 @@ import { AuthService } from '../../services/auth.service';
 import { ChatService } from '../../services/chat.service';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { FollowersComponent } from '../../components/followers/followers.component';
 
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FollowersComponent],
   templateUrl: './user-profile.component.html',
   styleUrls: ['./user-profile.component.scss']
 })
@@ -34,6 +35,9 @@ export class UserProfileComponent implements OnInit {
 
   myUid = '';
   friendsCount = 0;
+  followerCount = 0;
+  followingCount = 0;
+  activeFollowList: 'followers' | 'following' | null = null;
 
   // Estado de amistad con el usuario del perfil:
   // 'none' | 'pending-sent' | 'pending-received' | 'friends'
@@ -73,6 +77,7 @@ export class UserProfileComponent implements OnInit {
       await this.loadFollowState(uid);
       await this.loadFriendStatus(uid);
       await this.loadFriendsCount(uid);
+      await this.loadFollowCounts(uid);
 
     } catch (err) {
       console.error("ERROR EN ngOnInit:", err);
@@ -155,12 +160,24 @@ export class UserProfileComponent implements OnInit {
         await this.userService.follow(this.myUid, this.profileUser.id);
       }
       this.Yalosigue = !this.Yalosigue;
+      await this.loadFollowCounts(this.profileUser.id);
     } catch (error) {
       console.error('Error en seguimiento:', error);
     } finally {
       this.followLoading = false;
     }
   }
+
+  async loadFollowCounts(uid: string) {
+    const counts = await this.userService.getFollowCounts(uid);
+    this.followerCount = counts.followersCount;
+    this.followingCount = counts.followingCount;
+  }
+
+  toggleFollowList(list: 'followers' | 'following') {
+    this.activeFollowList = this.activeFollowList === list ? null : list;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // AMISTAD
   // ═══════════════════════════════════════════════════════════════════════

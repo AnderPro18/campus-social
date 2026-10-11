@@ -184,6 +184,27 @@
 
     &:last-child { border-right: none; }
 
+    &.follow-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-top: 0;
+      border-bottom: 0;
+      border-left: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      transition: background .18s ease;
+      @include m.focus-ring;
+
+      &:hover,
+      &[aria-expanded='true'] {
+        background: color-mix(in srgb, var(--brand-blue-light) 10%, transparent);
+      }
+    }
+
     .num {
       font-size: 20px;
       font-weight: bold;

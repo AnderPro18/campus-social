@@ -27,8 +27,33 @@
 
       <h2>{{ user?.displayName }}</h2>
       <p>{{ user?.email }}</p>
-      <p><strong>Seguidores:</strong> {{ followerCount }}</p>
-      <p><strong>Seguidos:</strong> {{ followingCount }}</p>
+      <div class="follow-stats">
+        <button
+          type="button"
+          class="follow-stat"
+          [attr.aria-expanded]="activeFollowList === 'followers'"
+          (click)="toggleFollowList('followers')"
+        >
+          <strong>Seguidores</strong>
+          <span>{{ followerCount }}</span>
+        </button>
+        <button
+          type="button"
+          class="follow-stat"
+          [attr.aria-expanded]="activeFollowList === 'following'"
+          (click)="toggleFollowList('following')"
+        >
+          <strong>Seguidos</strong>
+          <span>{{ followingCount }}</span>
+        </button>
+      </div>
+
+      <app-followers
+        *ngIf="activeFollowList && user?.uid"
+        [userId]="user.uid"
+        [listType]="activeFollowList"
+        (close)="activeFollowList = null"
+      />
     </div>
   </div>
 
