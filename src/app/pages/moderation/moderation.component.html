@@ -1,0 +1,41 @@
+<div class="page-container moderation-page">
+  <h2 class="page-title">Panel de moderación</h2>
+
+  <ng-container *ngIf="reports$ | async as reports; else loadingTpl">
+
+    <div *ngIf="reports.length === 0" class="empty-state">
+      No hay reportes pendientes. 🎉
+    </div>
+
+    <div class="report-card" *ngFor="let report of reports">
+      <div class="report-meta">
+        <span class="report-type">{{ report.itemType }}</span>
+        <span class="report-reason">{{ reasonLabels[report.reason] }}</span>
+      </div>
+
+      <p class="report-path"><strong>Ruta:</strong> {{ report.itemPath }}</p>
+      <p class="report-details" *ngIf="report.details">"{{ report.details }}"</p>
+      <p class="report-reporter"><strong>Reportado por:</strong> {{ report.reporterId }}</p>
+
+      <div class="report-actions">
+        <button
+          class="btn btn-secondary"
+          [disabled]="processingId === report.id"
+          (click)="resolve(report, 'dismissed')">
+          Descartar
+        </button>
+        <button
+          class="btn btn-primary"
+          [disabled]="processingId === report.id"
+          (click)="resolve(report, 'reviewed')">
+          Marcar revisado
+        </button>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <ng-template #loadingTpl>
+    <p class="text-muted">Cargando reportes...</p>
+  </ng-template>
+</div>

@@ -1,0 +1,81 @@
+
+<div class="register-page">
+  <div class="register-card">
+    <h1>Campus Social</h1>
+    <h2>Crear cuenta</h2>
+    <p class="subtitle">Únete a tu comunidad universitaria</p>
+
+    <form (ngSubmit)="createAccount(registerForm)" #registerForm="ngForm">
+      <label for="nombre">Nombre completo</label>
+      <input
+        id="nombre"
+        name="name"
+        type="text"
+        placeholder="Escribe tu nombre completo"
+        autocomplete="name"
+        [(ngModel)]="name"
+        required
+      />
+
+      <label for="correo">Correo electrónico</label>
+      <input
+        id="correo"
+        name="email"
+        type="email"
+        placeholder="nombre@estudiante.uniajc.edu.co"
+        autocomplete="email"
+        [(ngModel)]="email"
+        required
+        email
+      />
+      <small class="text-muted">
+        Usa un correo @estudiante.uniajc.edu.co o @profesores.uniajc.edu.co
+      </small>
+
+      <label for="contrasena">Contraseña</label>
+      <input
+        id="contrasena"
+        name="password"
+        type="password"
+        placeholder="Crea una contraseña"
+        autocomplete="new-password"
+        [(ngModel)]="password"
+        minlength="6"
+        required
+      />
+
+      <label for="confirmar">Confirmar contraseña</label>
+      <input
+        id="confirmar"
+        name="confirmPassword"
+        type="password"
+        placeholder="Escribe nuevamente tu contraseña"
+        autocomplete="new-password"
+        [(ngModel)]="confirmPassword"
+        minlength="6"
+        required
+      />
+
+      <div *ngIf="error" class="alert alert-danger mt-3" role="alert">
+        {{ error }}
+      </div>
+
+      <div *ngIf="successMessage" class="alert alert-success mt-3" role="status">
+        {{ successMessage }}
+      </div>
+
+      <button *ngIf="!accountCreated" type="submit" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Creando cuenta…' : 'Crear cuenta' }}
+      </button>
+    </form>
+
+    <button *ngIf="accountCreated" type="button" (click)="continueToProfile()">
+      Completar perfil
+    </button>
+
+    <p class="login-link">
+      ¿Ya tienes una cuenta?
+      <a routerLink="/login">Inicia sesión</a>
+    </p>
+  </div>
+</div>

@@ -2,15 +2,18 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './pages/home/home.component';
 import { FeedComponent } from './components/feed/feed.component';
 import { LoginComponent } from './pages/login/login.component';
+import { Register } from './pages/register/register';
 import { AuthGuard } from './guards/auth.guard';
 import { ReelsComponent } from './pages/reels/reels.component';
 import { FriendsComponent } from './pages/friends/friends.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { SavedComponent } from './pages/saved/saved.component';
+import { AdminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginComponent },
+  { path: 'register', component: Register },
   {
     path: 'complete-profile',
     loadComponent: () =>
@@ -44,6 +47,14 @@ export const routes: Routes = [
   loadComponent: () =>
     import('./pages/post-detail/post-detail.component') 
       .then(m => m.PostDetailComponent)
+},
+
+{
+  path: 'moderation',
+  loadComponent: () =>
+    import('./pages/moderation/moderation.component')
+      .then(m => m.ModerationComponent),
+  canActivate: [AdminGuard]
 },
 
   { path: '**', redirectTo: '' }

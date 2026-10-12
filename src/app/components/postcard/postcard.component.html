@@ -6,6 +6,13 @@
       <b>{{ post.userName }}</b>
       <div class="post-date">{{ post.createdAt | date:'short' }}</div>
     </div>
+    <app-report-button
+      class="post-report"
+      itemType="post"
+      [itemId]="post.id"
+      [itemPath]="'posts/' + post.id"
+      [itemOwnerId]="post.userId">
+    </app-report-button>
   </div>
 
   <p class="post-text">{{ post.content }}</p>

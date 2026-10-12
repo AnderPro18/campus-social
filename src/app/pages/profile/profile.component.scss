@@ -171,6 +171,13 @@
   }
 }
 
+.profile-feedback {
+  margin: 0 0 12px;
+
+  &.error { color: #b42318; }
+  &.success { color: #137547; }
+}
+
 /* ─── Post / Reel card ─── */
 .post-card,
 .reel-card {

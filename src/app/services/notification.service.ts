@@ -16,12 +16,14 @@ import {
 import { Auth, authState } from '@angular/fire/auth';
 import { Subscription } from 'rxjs';
 import { AppNotification, NotificationPayload } from '../models/notification.model';
+import { PushService } from './push.service';   // ← NUEVO
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
 
   private firestore = inject(Firestore);
   private auth      = inject(Auth);
+  private pushService = inject(PushService);      // ← NUEVO
 
   readonly notifications = signal<AppNotification[]>([]);
   readonly unreadCount   = computed(() =>
@@ -54,7 +56,9 @@ export class NotificationService {
   async createNotification(payload: NotificationPayload): Promise<void> {
     if (payload.toUid === payload.fromUid) return;
 
-    await addDoc(
+    // NUEVO: guardamos la referencia que devuelve addDoc, para tener el
+    // id recién creado y poder disparar el push justo después.
+    const notifRef = await addDoc(
       collection(this.firestore, `users/${payload.toUid}/notifications`),
       {
         toUid:           payload.toUid,
@@ -72,6 +76,10 @@ export class NotificationService {
         createdAt: serverTimestamp()
       }
     );
+
+    // NUEVO: dispara el push real (no bloquea ni rompe el flujo si falla —
+    // triggerPush ya atrapa sus propios errores internamente).
+    this.pushService.triggerPush(payload.toUid, notifRef.id);
   }
 
   async markRead(toUid: string, notifId: string): Promise<void> {

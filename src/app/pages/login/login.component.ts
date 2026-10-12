@@ -1,42 +1,74 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { PushService } from '../../services/push.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
 
   error = '';
+  email = '';
+  password = '';
+  isSubmitting = false;
 
-  constructor(private auth: AuthService, private router: Router) {}
+  private pushService = inject(PushService);
 
- async microsoftPopup() {
-  try {
-    const credential = await this.auth.loginWithMicrosoftPopup();
-    if (!credential) return;
+  constructor(
+    private auth: AuthService,
+    private router: Router
+  ) {}
 
-    // SIEMPRE enviar al HOME
-    await this.router.navigate(['/']);
-    return;
-
-  } catch (err: any) {
-    console.error(err);
-    this.error = err?.message || 'Error al iniciar con Microsoft';
-    return;
+  ngOnInit() {
+    this.pushService.requestPermissionAndSaveToken();
   }
-}
+
+  async microsoftPopup() {
+    this.isSubmitting = true;
+    this.error = '';
+
+    try {
+      const credential = await this.auth.loginWithMicrosoftPopup();
+
+      if (!credential) return;
+
+      await this.router.navigate(['/']);
+    } catch (err: unknown) {
+      console.error(err);
+      this.error = err instanceof Error ? err.message : 'Error al iniciar con Microsoft';
+    } finally {
+      this.isSubmitting = false;
+    }
+  }
+
+  async emailPasswordLogin() {
+    this.isSubmitting = true;
+    this.error = '';
+
+    try {
+      await this.auth.loginWithEmailAndPassword(this.email.trim(), this.password);
+      await this.router.navigate(['/feed']);
+    } catch (err: unknown) {
+      console.error(err);
+      this.error = this.auth.getEmailAuthErrorMessage(err);
+    } finally {
+      this.isSubmitting = false;
+    }
+  }
+
   async microsoftRedirect() {
     try {
       await this.auth.loginWithMicrosoftRedirect();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      this.error = err?.message || 'Error en redirect';
+      this.error = err instanceof Error ? err.message : 'Error en redirect';
     }
   }
 }

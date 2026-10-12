@@ -3,12 +3,15 @@ import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Firestore, doc, deleteDoc, setDoc } from '@angular/fire/firestore';
 import { Auth } from '@angular/fire/auth';
+
+import { ReportButtonComponent } from '../report-button/report-button.component';
 import { NotificationService } from '../../services/notification.service';
+
 
 @Component({
   selector: 'app-post-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ReportButtonComponent],
   templateUrl: './postcard.component.html',
   styleUrls: ['./postcard.component.scss'],
 })

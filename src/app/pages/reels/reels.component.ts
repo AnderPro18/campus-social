@@ -12,7 +12,10 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { SavedService } from '../../services/saved.service';
 import { Reel } from '../../models/reel.model';
+
+import { ReportButtonComponent } from '../../components/report-button/report-button.component';
 import { NotificationService } from '../../services/notification.service';
+
 
 export interface CommentItem {
   id?: string;
@@ -28,7 +31,7 @@ export interface CommentItem {
 @Component({
   selector: 'app-reels',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReportButtonComponent],
   templateUrl: './reels.component.html',
   styleUrls: ['./reels.component.scss'],
 })
