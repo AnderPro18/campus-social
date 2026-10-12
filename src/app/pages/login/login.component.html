@@ -1,20 +1,60 @@
-<div class="login-background">  <!-- Este contenedor usa login-bg en el SCSS -->
+<div class="login-background">
   <div class="login-page d-flex justify-content-center align-items-center">
     <div class="card login-card p-4">
 
       <div class="text-center mb-3">
-<img src="assets/universidad-logo.png" class="university-logo">      </div>
+        <img src="assets/universidad-logo.png" class="university-logo" alt="Logo de la universidad">
+      </div>
 
       <h2 class="mb-4 text-center">Campus Social</h2>
 
-      <button class="btn btn-microsoft w-100 mb-3" (click)="microsoftPopup()">
-<img src="assets/microsoft.png" class="ms-icon">        Iniciar sesión con Microsoft
+      <form (ngSubmit)="emailPasswordLogin()" #loginForm="ngForm">
+        <div class="mb-3">
+          <label for="email" class="form-label">Correo electrónico</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            class="form-control"
+            autocomplete="email"
+            [(ngModel)]="email"
+            required
+            email
+          >
+        </div>
+
+        <div class="mb-3">
+          <label for="password" class="form-label">Contraseña</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            class="form-control"
+            autocomplete="current-password"
+            [(ngModel)]="password"
+            required
+          >
+        </div>
+
+        <button class="btn btn-primary w-100 mb-3" type="submit" [disabled]="loginForm.invalid || isSubmitting">
+          Iniciar sesión
+        </button>
+      </form>
+
+      <div class="text-center mb-3">o</div>
+
+      <button class="btn btn-microsoft w-100 mb-3" [disabled]="isSubmitting" (click)="microsoftPopup()">
+        <img src="assets/microsoft.png" class="ms-icon" alt="">
+        Iniciar sesión con Microsoft
       </button>
 
-      <div *ngIf="error" class="alert alert-danger mt-2">
+      <div *ngIf="error" class="alert alert-danger mt-2" role="alert">
         {{ error }}
       </div>
 
+      <p class="text-center mb-0">
+        ¿No tienes una cuenta? <a routerLink="/register">Crear cuenta</a>
+      </p>
     </div>
   </div>
 </div>

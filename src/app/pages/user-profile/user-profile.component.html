@@ -36,8 +36,11 @@
           <p class="friends-count">{{ friendsCount }} amigo{{ friendsCount === 1 ? '' : 's' }}</p>
           <p class="bio" *ngIf="profileUser.bio">{{ profileUser.bio }}</p>
           <div class="meta">
+            <span *ngIf="profileUser.location">
+              <i class="bi bi-geo-alt"></i> {{ profileUser.location }}
+            </span>
             <span *ngIf="profileUser.birthPlace">
-              <i class="bi bi-geo-alt"></i> {{ profileUser.birthPlace }}
+              <i class="bi bi-calendar-event"></i> Lugar de nacimiento: {{ profileUser.birthPlace }}
             </span>
           </div>
 

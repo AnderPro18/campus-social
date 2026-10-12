@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, NgZone, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { updateProfile } from '@angular/fire/auth';
 import { AuthService } from '../../services/auth.service';
 import {
   Firestore,
@@ -22,6 +23,10 @@ import {
 } from '@angular/fire/firestore';
 import { PostService, ReactionType } from '../../services/post.service';
 
+const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_IMAGE_DATA_URL_LENGTH = 400_000;
+const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+
 @Component({
   selector: 'app-profile',
   standalone: true,
@@ -34,17 +39,36 @@ export class ProfileComponent {
   auth = inject(AuthService);
   firestore = inject(Firestore);
   postService = inject(PostService);
+  private zone = inject(NgZone);
 
   user: any = null;
 
   // PERFIL
+  displayName = '';
+  profileName = '';
+  readonly defaultAvatar = DEFAULT_AVATAR;
   bio = '';
+  location = '';
   careerOrArea = '';
   birthDate = '';
   birthPlace = '';
   avatar = '';
+  avatarWasRemoved = false;
   cover = '';
   editing = false;
+  profileLoading = true;
+  profileSaving = false;
+  profileError = '';
+  profileNotice = '';
+
+  private savedProfile = {
+    displayName: '',
+    bio: '',
+    location: '',
+    careerOrArea: '',
+    birthDate: '',
+    birthPlace: ''
+  };
 
   myPosts: any[] = [];
   myReels: any[] = [];
@@ -75,10 +99,22 @@ export class ProfileComponent {
     this.auth.user$.subscribe(u => {
       this.user = u;
       if (u) {
+        this.profileLoading = true;
         this.loadUserProfile();
         this.loadUserPosts();
         this.loadUserReels();
       } else {
+        this.profileLoading = false;
+        this.profileName = '';
+        this.displayName = '';
+        this.bio = '';
+        this.location = '';
+        this.careerOrArea = '';
+        this.birthDate = '';
+        this.birthPlace = '';
+        this.avatar = '';
+        this.avatarWasRemoved = false;
+        this.cover = '';
         this.myPosts = [];
         this.myReels = [];
         this.profileFeed = [];
@@ -101,29 +137,121 @@ export class ProfileComponent {
   // =============================
   async loadUserProfile() {
     if (!this.user) return;
-    const ref = doc(this.firestore, `users/${this.user.uid}`);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) return;
+    this.profileLoading = true;
+    try {
+      const ref = doc(this.firestore, `users/${this.user.uid}`);
+      const snap = await getDoc(ref);
+      const data = snap.exists() ? snap.data() : {};
 
-    const data: any = snap.data();
-    this.bio = data.bio || '';
-    this.careerOrArea = data.careerOrArea || '';
-    this.birthDate = data.birthDate || '';
-    this.birthPlace = data.birthPlace || '';
-    this.avatar = data.avatar || this.user.photoURL || '';
-    this.cover = data.cover || '';
+      this.zone.run(() => {
+        this.profileName = data['displayName'] || this.user.displayName || '';
+        this.displayName = this.profileName;
+        this.bio = typeof data['bio'] === 'string' ? data['bio'] : data['descripcion'] || '';
+        this.location = typeof data['location'] === 'string' ? data['location'] : '';
+        this.careerOrArea = typeof data['careerOrArea'] === 'string'
+          ? data['careerOrArea']
+          : data['career'] || data['carrera'] || data['area'] || '';
+        this.birthDate = typeof data['birthDate'] === 'string'
+          ? data['birthDate']
+          : data['fechaNacimiento'] || '';
+        this.birthPlace = typeof data['birthPlace'] === 'string'
+          ? data['birthPlace']
+          : data['ciudad'] || '';
+        this.avatar = typeof data['avatar'] === 'string' ? data['avatar'] : '';
+        this.avatarWasRemoved = Object.hasOwn(data, 'avatar') && !this.avatar;
+        this.cover = typeof data['cover'] === 'string' ? data['cover'] : '';
+        this.saveCurrentProfileAsOriginal();
+        this.profileLoading = false;
+      });
+    } catch (error) {
+      console.error('Error cargando el perfil:', error);
+      this.zone.run(() => {
+        this.profileError = 'No se pudo cargar tu perfil. Inténtalo de nuevo más tarde.';
+        this.profileLoading = false;
+      });
+    }
   }
 
   async saveProfile() {
-    if (!this.user) return;
-    await updateDoc(doc(this.firestore, `users/${this.user.uid}`), {
+    if (!this.user || this.profileSaving) return;
+
+    const updatedProfile = {
+      displayName: this.displayName.trim(),
+      bio: this.bio.trim(),
+      location: this.location.trim(),
+      careerOrArea: this.careerOrArea.trim(),
+      birthDate: this.birthDate,
+      birthPlace: this.birthPlace.trim()
+    };
+
+    if (
+      !updatedProfile.displayName ||
+      updatedProfile.displayName.length > 80 ||
+      updatedProfile.bio.length > 300 ||
+      updatedProfile.location.length > 100 ||
+      updatedProfile.careerOrArea.length > 100 ||
+      updatedProfile.birthPlace.length > 100
+    ) {
+      this.profileError = 'Revisa los campos: el nombre es obligatorio y algunos textos superan su límite.';
+      return;
+    }
+
+    this.profileSaving = true;
+    this.profileError = '';
+    this.profileNotice = '';
+    try {
+      await setDoc(doc(this.firestore, `users/${this.user.uid}`), {
+        ...updatedProfile,
+        email: this.user.email || null,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      this.profileName = updatedProfile.displayName;
+      this.saveCurrentProfileAsOriginal();
+      this.editing = false;
+
+      try {
+        await updateProfile(this.user, { displayName: updatedProfile.displayName });
+        this.profileNotice = 'Perfil guardado correctamente.';
+      } catch (error) {
+        console.error('El perfil se guardó, pero no se sincronizó el nombre de Auth:', error);
+        this.profileNotice =
+          'Tus datos se guardaron, pero no se pudo sincronizar el nombre de la cuenta.';
+      }
+    } catch (error) {
+      console.error('Error guardando el perfil:', error);
+      this.profileError = 'No se pudo guardar el perfil. Comprueba tu conexión e inténtalo de nuevo.';
+    } finally {
+      this.profileSaving = false;
+    }
+  }
+
+  beginEditing() {
+    this.profileError = '';
+    this.profileNotice = '';
+    this.editing = true;
+  }
+
+  cancelEditing() {
+    this.displayName = this.savedProfile.displayName;
+    this.bio = this.savedProfile.bio;
+    this.location = this.savedProfile.location;
+    this.careerOrArea = this.savedProfile.careerOrArea;
+    this.birthDate = this.savedProfile.birthDate;
+    this.birthPlace = this.savedProfile.birthPlace;
+    this.profileError = '';
+    this.editing = false;
+  }
+
+  private saveCurrentProfileAsOriginal() {
+    this.savedProfile = {
+      displayName: this.displayName,
       bio: this.bio,
+      location: this.location,
       careerOrArea: this.careerOrArea,
       birthDate: this.birthDate,
-      birthPlace: this.birthPlace,
-      updatedAt: serverTimestamp()
-    });
-    this.editing = false;
+      birthPlace: this.birthPlace
+    };
   }
 
   
@@ -413,12 +541,25 @@ async resizeImage(
   maxH = 400,
   quality = 0.7
 ): Promise<string> {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Selecciona un archivo de imagen.');
+  }
+  if (file.size > MAX_IMAGE_FILE_SIZE) {
+    throw new Error('La imagen no puede superar los 5 MB.');
+  }
+
   return new Promise((resolve, reject) => {
     const img = new Image();
     const reader = new FileReader();
 
-    reader.onload = (e: any) => (img.src = e.target.result);
-    reader.onerror = reject;
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') {
+        reject(new Error('No se pudo leer la imagen.'));
+        return;
+      }
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject(new Error('No se pudo leer la imagen.'));
     reader.readAsDataURL(file);
 
     img.onload = () => {
@@ -437,57 +578,122 @@ async resizeImage(
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
-      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+      const context = canvas.getContext('2d');
+      if (!context) {
+        reject(new Error('El navegador no pudo procesar la imagen.'));
+        return;
+      }
+      context.drawImage(img, 0, 0, width, height);
 
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      try {
+        let resizedImage = canvas.toDataURL('image/jpeg', quality);
+        for (let imageQuality = quality - 0.15;
+          resizedImage.length > MAX_IMAGE_DATA_URL_LENGTH && imageQuality >= 0.2;
+          imageQuality -= 0.15) {
+          resizedImage = canvas.toDataURL('image/jpeg', imageQuality);
+        }
+        if (resizedImage.length > MAX_IMAGE_DATA_URL_LENGTH) {
+          reject(new Error('La imagen procesada es demasiado grande. Prueba con otra imagen.'));
+          return;
+        }
+        resolve(resizedImage);
+      } catch (error) {
+        reject(error);
+      }
     };
 
-    img.onerror = reject;
+    img.onerror = () => reject(new Error('El archivo seleccionado no es una imagen válida.'));
   });
 }
 
 /* ========= AVATAR ========= */
-async onAvatarSelected(event: any) {
-  const file = event.target.files?.[0];
+async onAvatarSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
   if (!file || !this.user) return;
 
-  this.avatar = await this.resizeImage(file, 300, 300, 0.8);
-  await updateDoc(doc(this.firestore, `users/${this.user.uid}`), {
-    avatar: this.avatar,
-    updatedAt: serverTimestamp()
-  });
+  this.profileError = '';
+  this.profileNotice = '';
+  try {
+    const avatar = await this.resizeImage(file, 300, 300, 0.8);
+    await setDoc(doc(this.firestore, `users/${this.user.uid}`), {
+      avatar,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    this.avatar = avatar;
+    this.avatarWasRemoved = false;
+    this.profileNotice = 'Foto de perfil actualizada.';
+  } catch (error) {
+    console.error('Error actualizando la foto de perfil:', error);
+    this.profileError = error instanceof Error
+      ? error.message
+      : 'No se pudo actualizar la foto de perfil.';
+  } finally {
+    input.value = '';
+  }
 }
 
 async removeAvatar() {
   if (!this.user) return;
 
-  this.avatar = '';
-  await updateDoc(doc(this.firestore, `users/${this.user.uid}`), {
-    avatar: '',
-    updatedAt: serverTimestamp()
-  });
+  this.profileError = '';
+  this.profileNotice = '';
+  try {
+    await setDoc(doc(this.firestore, `users/${this.user.uid}`), {
+      avatar: '',
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    this.avatar = '';
+    this.avatarWasRemoved = true;
+    this.profileNotice = 'Foto de perfil eliminada.';
+  } catch (error) {
+    console.error('Error eliminando la foto de perfil:', error);
+    this.profileError = 'No se pudo eliminar la foto de perfil.';
+  }
 }
 
 /* ========= PORTADA ========= */
-async onCoverSelected(event: any) {
-  const file = event.target.files?.[0];
+async onCoverSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
   if (!file || !this.user) return;
 
-  this.cover = await this.resizeImage(file, 1200, 450, 0.8);
-  await updateDoc(doc(this.firestore, `users/${this.user.uid}`), {
-    cover: this.cover,
-    updatedAt: serverTimestamp()
-  });
+  this.profileError = '';
+  this.profileNotice = '';
+  try {
+    const cover = await this.resizeImage(file, 1200, 450, 0.8);
+    await setDoc(doc(this.firestore, `users/${this.user.uid}`), {
+      cover,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    this.cover = cover;
+    this.profileNotice = 'Portada actualizada.';
+  } catch (error) {
+    console.error('Error actualizando la portada:', error);
+    this.profileError = error instanceof Error
+      ? error.message
+      : 'No se pudo actualizar la portada.';
+  } finally {
+    input.value = '';
+  }
 }
 
 async removeCover() {
   if (!this.user) return;
 
-  this.cover = '';
-  await updateDoc(doc(this.firestore, `users/${this.user.uid}`), {
-    cover: '',
-    updatedAt: serverTimestamp()
-  });
+  this.profileError = '';
+  this.profileNotice = '';
+  try {
+    await setDoc(doc(this.firestore, `users/${this.user.uid}`), {
+      cover: '',
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    this.cover = '';
+    this.profileNotice = 'Portada eliminada.';
+  } catch (error) {
+    console.error('Error eliminando la portada:', error);
+    this.profileError = 'No se pudo eliminar la portada.';
+  }
 }
 
 async getPostReactions(postId: string) {

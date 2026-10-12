@@ -1,0 +1,59 @@
+@use '../../../styles/mixins' as m;
+
+.moderation-page {
+  max-width: 700px;
+}
+
+.empty-state {
+  @include m.neu-raised(var(--r-lg));
+  padding: var(--sp-6);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.report-card {
+  @include m.neu-raised(var(--r-lg));
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+
+.report-meta {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+
+  span {
+    @include m.gold-accent(var(--r-sm));
+    padding: 3px 10px;
+    font-size: 12px;
+  }
+
+  .report-reason {
+    background: none;
+    box-shadow: none;
+    color: var(--danger);
+    font-weight: 600;
+  }
+}
+
+.report-path,
+.report-reporter {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 4px 0;
+}
+
+.report-details {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-style: italic;
+  margin: var(--sp-2) 0;
+}
+
+.report-actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+
+  button { flex: 1; }
+}

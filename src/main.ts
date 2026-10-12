@@ -6,19 +6,30 @@ import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideAuth, getAuth } from '@angular/fire/auth';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { provideStorage, getStorage } from '@angular/fire/storage';
+import { provideMessaging, getMessaging } from '@angular/fire/messaging'; // ← NUEVO
 import { environment } from './environments/environment';
 import { getRedirectResult } from '@angular/fire/auth';
 
-import { provideHttpClient } from '@angular/common/http';  // <<--- AGREGAR ESTO
+import { provideHttpClient } from '@angular/common/http';
+import { isDevMode } from '@angular/core';
+import { provideServiceWorker } from '@angular/service-worker';
 
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes),
-    provideHttpClient(),                 // <<--- AGREGAR ESTO
+    provideHttpClient(),
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()),
     provideStorage(() => getStorage()),
+    provideMessaging(() => getMessaging()),   // ← NUEVO (esto es lo que faltaba)
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000'
+    }),
+    // (se quitaron las 2 llamadas duplicadas a provideServiceWorker que
+    // había antes — no rompían nada, pero registraban el service worker
+    // tres veces innecesariamente)
   ],
 }).then(async () => {
   try {
