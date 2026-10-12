@@ -8,7 +8,9 @@ import {
   arrayRemove,
 } from '@angular/fire/firestore';
 import { Messaging, getToken, onMessage } from '@angular/fire/messaging';
-import { environment } from '../../environments/environment';
+
+const PUSH_ENDPOINT_URL =
+  'https://campus-social-push.netlify.app/.netlify/functions/send-push';
 
 @Injectable({ providedIn: 'root' })
 export class PushService {
@@ -37,7 +39,6 @@ export class PushService {
 
     try {
       const token = await getToken(this.messaging, {
-        vapidKey: environment.firebase.vapidKey,
         serviceWorkerRegistration: await navigator.serviceWorker.getRegistration(
           '/firebase-messaging-sw.js'
         ),
@@ -58,9 +59,7 @@ export class PushService {
     if (!user) return;
 
     try {
-      const token = await getToken(this.messaging, {
-        vapidKey: environment.firebase.vapidKey,
-      });
+      const token = await getToken(this.messaging);
       if (token) {
         const userRef = doc(this.firestore, `users/${user.uid}`);
         await updateDoc(userRef, { fcmTokens: arrayRemove(token) });
@@ -82,15 +81,28 @@ export class PushService {
    * No lanza si falla — un push perdido no debe romper el flujo principal.
    */
   async triggerPush(uid: string, notificationId: string): Promise<void> {
+    const user = this.auth.currentUser;
+    if (!user) {
+      console.warn('No se puede enviar la solicitud push sin una sesión autenticada.');
+      return;
+    }
+
     try {
-      await fetch(environment.pushEndpointUrl, {
+      const idToken = await user.getIdToken();
+      const response = await fetch(PUSH_ENDPOINT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${environment.pushTriggerSecret}`,
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({ uid, notificationId }),
       });
+
+      if (!response.ok) {
+        console.warn(
+          `No se pudo disparar el push: el endpoint respondió HTTP ${response.status}.`
+        );
+      }
     } catch (err) {
       console.warn('No se pudo disparar el push (no crítico):', err);
     }

@@ -146,7 +146,7 @@ export class PostService {
     reel: Reel,
     user: AppUser,
     extra?: { description?: string; tags?: string[] }
-  ) {
+  ): Promise<string> {
     const postData = {
       type: 'repost',
       originalPostId:      reel.id!,
@@ -171,7 +171,9 @@ export class PostService {
       repostsCount:      0
     };
 
-    await setDoc(doc(collection(this.fs, 'posts')), postData);
+    const postRef = doc(collection(this.fs, 'posts'));
+    await setDoc(postRef, postData);
+    return postRef.id;
   }
 
   /* ===========================

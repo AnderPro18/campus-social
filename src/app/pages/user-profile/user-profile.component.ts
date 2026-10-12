@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { UserService} from '../../services/user.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   Firestore, doc, getDoc, collection, query, where, getDocs, orderBy,
@@ -9,11 +10,13 @@ import { AuthService } from '../../services/auth.service';
 import { ChatService } from '../../services/chat.service';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { FollowersComponent } from '../../components/followers/followers.component';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FollowersComponent],
   templateUrl: './user-profile.component.html',
   styleUrls: ['./user-profile.component.scss']
 })
@@ -23,6 +26,8 @@ export class UserProfileComponent implements OnInit {
   private firestore = inject(Firestore);
   private auth = inject(AuthService);
   private chatService = inject(ChatService);
+  private userService = inject(UserService);
+  private notificationService = inject(NotificationService);
 
   profileUser: any = null;
   posts: any[] = [];
@@ -32,6 +37,9 @@ export class UserProfileComponent implements OnInit {
 
   myUid = '';
   friendsCount = 0;
+  followerCount = 0;
+  followingCount = 0;
+  activeFollowList: 'followers' | 'following' | null = null;
 
   // Estado de amistad con el usuario del perfil:
   // 'none' | 'pending-sent' | 'pending-received' | 'friends'
@@ -43,6 +51,9 @@ export class UserProfileComponent implements OnInit {
   searchTerm: string = '';
   searchResults: any[] = [];
   searching = false;
+
+  Yalosigue = false;
+  followLoading = false;
 
   async ngOnInit() {
   this.route.paramMap.subscribe(async params => {
@@ -65,8 +76,10 @@ export class UserProfileComponent implements OnInit {
       }
 
       await this.loadProfile(uid);
+      await this.loadFollowState(uid);
       await this.loadFriendStatus(uid);
       await this.loadFriendsCount(uid);
+      await this.loadFollowCounts(uid);
 
     } catch (err) {
       console.error("ERROR EN ngOnInit:", err);
@@ -87,7 +100,7 @@ export class UserProfileComponent implements OnInit {
     if (!userSnap.exists()) {
       console.warn('Usuario no encontrado:', uid);
       this.notFound = true;
-      this.loading = false; // 👈 CLAVE
+      this.loading = false;
       return;
     }
 
@@ -125,10 +138,48 @@ export class UserProfileComponent implements OnInit {
     console.error("❌ ERROR LOAD PROFILE:", err);
     this.notFound = true;
   } finally {
-    // 🔥 SIEMPRE se ejecuta
     this.loading = false;
   }
 }
+
+  async loadFollowState(targetUid: string) {
+    if (!this.myUid || !targetUid || this.myUid === targetUid) {
+      this.Yalosigue = false;
+      return;
+    }
+
+    this.Yalosigue = await this.userService.isFollowing(this.myUid, targetUid);
+  }
+
+  async toggleFollow() {
+    if (!this.profileUser?.id || !this.myUid || this.followLoading) return;
+
+    this.followLoading = true;
+    try {
+      if (this.Yalosigue) {
+        await this.userService.unfollow(this.myUid, this.profileUser.id);
+      } else {
+        await this.userService.follow(this.myUid, this.profileUser.id);
+      }
+      this.Yalosigue = !this.Yalosigue;
+      await this.loadFollowCounts(this.profileUser.id);
+    } catch (error) {
+      console.error('Error en seguimiento:', error);
+    } finally {
+      this.followLoading = false;
+    }
+  }
+
+  async loadFollowCounts(uid: string) {
+    const counts = await this.userService.getFollowCounts(uid);
+    this.followerCount = counts.followersCount;
+    this.followingCount = counts.followingCount;
+  }
+
+  toggleFollowList(list: 'followers' | 'following') {
+    this.activeFollowList = this.activeFollowList === list ? null : list;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // AMISTAD
   // ═══════════════════════════════════════════════════════════════════════
@@ -193,6 +244,20 @@ export class UserProfileComponent implements OnInit {
       });
       this.friendRequestId = ref.id;
       this.friendStatus = 'pending-sent';
+      const user = this.auth.currentUser;
+      if (user) {
+        try {
+          await this.notificationService.notifyFriendRequest({
+            toUid: this.profileUser.id,
+            fromUid: user.uid,
+            fromName: user.displayName || 'Usuario',
+            fromAvatar: user.photoURL || '',
+            friendRequestId: ref.id
+          });
+        } catch (error) {
+          console.error('No se pudo notificar la solicitud de amistad:', error);
+        }
+      }
     } catch (e) {
       console.error('Error enviando solicitud:', e);
     } finally {
@@ -205,6 +270,20 @@ export class UserProfileComponent implements OnInit {
     this.friendActionLoading = true;
     try {
       await updateDoc(doc(this.firestore, `friendRequests/${this.friendRequestId}`), { status: 'accepted' });
+      try {
+        await this.notificationService.markFriendRequestProcessed(this.myUid, this.friendRequestId);
+        const user = this.auth.currentUser;
+        if (user && this.profileUser?.id) {
+          await this.notificationService.notifyFriendAccepted({
+            toUid: this.profileUser.id,
+            fromUid: user.uid,
+            fromName: user.displayName || 'Usuario',
+            fromAvatar: user.photoURL || ''
+          });
+        }
+      } catch (error) {
+        console.error('No se pudo notificar la aceptación de amistad:', error);
+      }
       this.friendStatus = 'friends';
       if (this.profileUser?.id) await this.loadFriendsCount(this.profileUser.id);
     } catch (e) {
@@ -219,6 +298,11 @@ export class UserProfileComponent implements OnInit {
     this.friendActionLoading = true;
     try {
       await updateDoc(doc(this.firestore, `friendRequests/${this.friendRequestId}`), { status: 'rejected' });
+      try {
+        await this.notificationService.markFriendRequestProcessed(this.myUid, this.friendRequestId);
+      } catch (error) {
+        console.error('No se pudo actualizar la notificación de solicitud:', error);
+      }
       this.friendStatus = 'none';
       this.friendRequestId = null;
     } catch (e) {

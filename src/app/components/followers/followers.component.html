@@ -1,0 +1,43 @@
+<div class="followers-backdrop" (click)="close.emit()">
+  <section
+    class="followers-window"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="listType === 'followers' ? 'Seguidores' : 'Seguidos'"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="followers-header">
+      <h3>{{ listType === 'followers' ? 'Seguidores' : 'Seguidos' }}</h3>
+      <button type="button" class="close-button" aria-label="Cerrar" (click)="close.emit()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </header>
+
+    <div class="followers-list" aria-live="polite">
+      <p *ngIf="loading" class="list-message">Cargando...</p>
+
+      <div *ngIf="loadError && !loading" class="list-message">
+        <p>No se pudo cargar la lista.</p>
+        <button type="button" class="retry-button" (click)="loadUsers()">Reintentar</button>
+      </div>
+
+      <p *ngIf="!loading && !loadError && users.length === 0" class="list-message">
+        {{ listType === 'followers' ? 'Aún no tienes seguidores.' : 'Aún no sigues a nadie.' }}
+      </p>
+
+      <a
+        *ngFor="let listedUser of users"
+        class="follower-user"
+        [routerLink]="['/user', listedUser.uid]"
+        (click)="close.emit()"
+      >
+        <img
+          [src]="listedUser.photoURL || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
+          [alt]="'Foto de ' + listedUser.displayName"
+        >
+        <span>{{ listedUser.displayName }}</span>
+        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+      </a>
+    </div>
+  </section>
+</div>

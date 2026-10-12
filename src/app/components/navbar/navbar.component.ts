@@ -1,26 +1,18 @@
 import { Component, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { SearchService } from '../../services/search.service';
 import { CommonModule, AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProfileStateService } from '../../services/profile-state.service';
 import { ChatService } from '../../services/chat.service';
-import {
-  Firestore,
-  collection,
-  collectionData,
-  query,
-  orderBy,
-  doc,
-  updateDoc
-} from '@angular/fire/firestore';
-import { firstValueFrom } from 'rxjs';
+import { NotificationService } from '../../services/notification.service';
+import { NotificationsPanelComponent } from '../notifications/notifications-panel.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, AsyncPipe, FormsModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, AsyncPipe, FormsModule, NotificationsPanelComponent],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss']
 })
@@ -30,8 +22,8 @@ export class NavbarComponent {
   private router = inject(Router);
   private search = inject(SearchService);
   private profileState = inject(ProfileStateService);
-  private firestore = inject(Firestore);
   private chatService = inject(ChatService);
+  readonly notificationService = inject(NotificationService);
 
   user$ = this.auth.user$;
   unreadChatsCount$ = this.chatService.getUnreadChatsCount();
@@ -49,8 +41,6 @@ export class NavbarComponent {
   userResults: any[] = [];
   postResults: any[] = [];
   reelResults: any[] = [];
-  notifications: any[] = [];
-
   isSearching = false;
   showDropdown = false;
   profileComplete = true;
@@ -66,7 +56,6 @@ export class NavbarComponent {
     this.search.fixPosts();
   });
 
-  this.loadNotifications();
 }
 
   get shouldShowNavbar() {
@@ -165,68 +154,17 @@ this.reelResults = all.filter((r: any) =>
     window.open('https://aulasvirtuales.unicamacho.edu.co/login/', '_blank');
   }
 
-loadNotifications() {
+async toggleNotifications(): Promise<void> {
+  this.showNotifications = !this.showNotifications;
+  if (!this.showNotifications) return;
 
-  this.auth.user$.subscribe(user => {
+  const uid = this.auth.currentUid;
+  if (!uid) return;
 
-    if (!user) return;
-
-    const ref = collection(
-      this.firestore,
-      `users/${user.uid}/notifications`
-    );
-
-    collectionData(ref, { idField: 'id' })
-      .subscribe({
-        next: (data: any[]) => {
-
-          console.log('NOTIFS:', data);
-
-          this.notifications = data;
-
-        },
-
-        error: err => {
-          console.error('ERROR NOTIFS:', err);
-        }
-      });
-
-  });
-
-}
-async openNotification(notification: any) {
-
-  this.showNotifications = false;
-
-  // 🔥 marcar leída
-  if (!notification.read) {
-
-    const ref = doc(
-      this.firestore,
-      `users/${
-        (await firstValueFrom(this.auth.user$))?.uid
-      }/notifications/${notification.id}`
-    );
-
-    await updateDoc(ref, {
-      read: true
-    });
-
+  try {
+    await this.notificationService.markAllRead(uid);
+  } catch (error) {
+    console.error('No se pudieron marcar las notificaciones como leídas:', error);
   }
-
-  // 🔥 abrir post
-  if (notification.postId) {
-
-    this.router.navigate([
-      '/post',
-      notification.postId
-    ]);
-
-  }
-
-}
-
-get unreadNotificationsCount(): number {
-  return this.notifications?.filter(n => !n.read).length || 0;
 }
 }

@@ -7,6 +7,7 @@ import {
   doc, updateDoc, deleteDoc, getDoc, addDoc
 } from '@angular/fire/firestore';
 import { Auth } from '@angular/fire/auth';
+import { NotificationService } from '../../services/notification.service';
 
 interface PersonCard {
   id: string;
@@ -28,6 +29,7 @@ export class FriendsComponent implements OnInit {
   private firestore = inject(Firestore);
   private auth = inject(Auth);
   private router = inject(Router);
+  private notificationService = inject(NotificationService);
 
   currentUserId = '';
   loading = true;
@@ -191,6 +193,20 @@ export class FriendsComponent implements OnInit {
   async confirmRequest(person: PersonCard) {
     if (!person.requestId) return;
     await updateDoc(doc(this.firestore, `friendRequests/${person.requestId}`), { status: 'accepted' });
+    try {
+      await this.notificationService.markFriendRequestProcessed(this.currentUserId, person.requestId);
+      const user = this.auth.currentUser;
+      if (user) {
+        await this.notificationService.notifyFriendAccepted({
+          toUid: person.id,
+          fromUid: user.uid,
+          fromName: user.displayName || 'Usuario',
+          fromAvatar: user.photoURL || ''
+        });
+      }
+    } catch (error) {
+      console.error('No se pudo notificar la aceptación de amistad:', error);
+    }
     this.pendingReceived = this.pendingReceived.filter(p => p.id !== person.id);
     await this.loadAll();
   }
@@ -198,17 +214,36 @@ export class FriendsComponent implements OnInit {
   async declineRequest(person: PersonCard) {
     if (!person.requestId) return;
     await updateDoc(doc(this.firestore, `friendRequests/${person.requestId}`), { status: 'rejected' });
+    try {
+      await this.notificationService.markFriendRequestProcessed(this.currentUserId, person.requestId);
+    } catch (error) {
+      console.error('No se pudo actualizar la notificación de solicitud:', error);
+    }
     this.pendingReceived = this.pendingReceived.filter(p => p.id !== person.id);
   }
 
   async sendRequest(person: PersonCard) {
     const ref = collection(this.firestore, 'friendRequests');
-    await addDoc(ref, {
+    const request = await addDoc(ref, {
       from: this.currentUserId,
       to: person.id,
       status: 'pending',
       createdAt: new Date()
     });
+    const user = this.auth.currentUser;
+    if (user) {
+      try {
+        await this.notificationService.notifyFriendRequest({
+          toUid: person.id,
+          fromUid: user.uid,
+          fromName: user.displayName || 'Usuario',
+          fromAvatar: user.photoURL || '',
+          friendRequestId: request.id
+        });
+      } catch (error) {
+        console.error('No se pudo notificar la solicitud de amistad:', error);
+      }
+    }
     this.suggestions = this.suggestions.filter(s => s.id !== person.id);
   }
 

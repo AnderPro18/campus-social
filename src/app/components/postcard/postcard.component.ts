@@ -3,7 +3,10 @@ import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Firestore, doc, deleteDoc, setDoc } from '@angular/fire/firestore';
 import { Auth } from '@angular/fire/auth';
+
 import { ReportButtonComponent } from '../report-button/report-button.component';
+import { NotificationService } from '../../services/notification.service';
+
 
 @Component({
   selector: 'app-post-card',
@@ -18,6 +21,7 @@ export class PostCardComponent {
 
   private firestore = inject(Firestore);
   private auth = inject(Auth);
+  private notificationService = inject(NotificationService);
 
   reacting = false;
 
@@ -51,6 +55,20 @@ export class PostCardComponent {
         type,
         createdAt: new Date()
       });
+
+      if (this.post.userId && this.post.myReaction !== type) {
+        try {
+          await this.notificationService.notifyReaction({
+            toUid: this.post.userId,
+            fromUid: user.uid,
+            fromName: user.displayName || 'Usuario',
+            fromAvatar: user.photoURL || '',
+            postId: this.post.id
+          });
+        } catch (error) {
+          console.error('No se pudo notificar la reacción:', error);
+        }
+      }
 
       // Cambiar en UI
       if (this.post.myReaction) {
