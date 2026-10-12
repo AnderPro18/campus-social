@@ -10,6 +10,7 @@ import { Observable, of, combineLatest } from 'rxjs';
 import { map, switchMap, filter } from 'rxjs/operators';
 import { Chat, Message, CallSession } from '../models/chat.model';
 import { AuthService } from './auth.service';
+import { NotificationService } from './notification.service';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
@@ -17,6 +18,7 @@ import { firstValueFrom } from 'rxjs';
 export class ChatService {
   private firestore = inject(Firestore);
   private auth = inject(AuthService);
+  private notificationService = inject(NotificationService);
   private http = inject(HttpClient);
 
   // ─── HELPERS ──────────────────────────────────────────────────────────────
@@ -128,6 +130,26 @@ export class ChatService {
       lastMessage: preview,
       lastUpdated: serverTimestamp()
     });
+
+    try {
+      const chatSnap = await getDoc(doc(this.firestore, `chats/${chatId}`));
+      const members = chatSnap.exists() ? chatSnap.data()['members'] : null;
+      if (!Array.isArray(members)) return;
+
+      const user = this.auth.currentUser;
+      await Promise.all(members
+        .filter((memberUid): memberUid is string => typeof memberUid === 'string' && memberUid !== myUid)
+        .map(toUid => this.notificationService.notifyMessage({
+          toUid,
+          fromUid: myUid,
+          fromName: user?.displayName || 'Usuario',
+          fromAvatar: user?.photoURL || '',
+          chatId,
+          text: preview
+        })));
+    } catch (error) {
+      console.error('No se pudieron crear las notificaciones del mensaje:', error);
+    }
   }
 
   private getMessagePreview(payload: Partial<Message>): string {

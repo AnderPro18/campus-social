@@ -65,6 +65,7 @@ export class NotificationService {
         postId:          payload.postId          ?? null,
         chatId:          payload.chatId          ?? null,
         friendRequestId: payload.friendRequestId ?? null,
+        commentId:       payload.commentId       ?? null,
         text:            payload.text            ?? null,
         reelId:          payload.reelId          ?? null,
         read:      false,
@@ -91,9 +92,30 @@ export class NotificationService {
     await batch.commit();
   }
 
+  async markFriendRequestProcessed(toUid: string, friendRequestId: string): Promise<void> {
+    const ref = query(
+      collection(this.firestore, `users/${toUid}/notifications`),
+      where('friendRequestId', '==', friendRequestId)
+    );
+    const snap = await getDocs(ref);
+    if (snap.empty) return;
+
+    const batch = writeBatch(this.firestore);
+    snap.docs.forEach(d => batch.update(d.ref, { read: true, processed: true }));
+    await batch.commit();
+  }
+
   // ── Atajos por tipo ────────────────────────────────────────────────────────
   notifyComment(p: { toUid: string; fromUid: string; fromName: string; fromAvatar: string; postId: string; text: string }): Promise<void> {
     return this.createNotification({ ...p, type: 'comment' });
+  }
+
+  notifyReelComment(p: { toUid: string; fromUid: string; fromName: string; fromAvatar: string; reelId: string; text: string }): Promise<void> {
+    return this.createNotification({ ...p, type: 'comment' });
+  }
+
+  notifyCommentReaction(p: { toUid: string; fromUid: string; fromName: string; fromAvatar: string; commentId: string; postId?: string; reelId?: string }): Promise<void> {
+    return this.createNotification({ ...p, type: 'comment_reaction' });
   }
 
   notifyReaction(p: { toUid: string; fromUid: string; fromName: string; fromAvatar: string; postId: string }): Promise<void> {
@@ -120,7 +142,42 @@ export class NotificationService {
     return this.createNotification({ ...p, type: 'reply' });
   }
 
+  notifyReelReply(p: { toUid: string; fromUid: string; fromName: string; fromAvatar: string; reelId: string; text: string }): Promise<void> {
+    return this.createNotification({ ...p, type: 'reply' });
+  }
+
   notifyMention(p: { toUid: string; fromUid: string; fromName: string; fromAvatar: string; postId: string }): Promise<void> {
     return this.createNotification({ ...p, type: 'mention' });
+  }
+
+  async notifyMentionedUsers(p: {
+    users: { uid: string; userName: string }[];
+    fromUid: string;
+    fromName: string;
+    fromAvatar: string;
+    text: string;
+    postId?: string;
+    reelId?: string;
+  }): Promise<void> {
+    const normalizedText = p.text.toLocaleLowerCase();
+    const targets = p.users.filter(user =>
+      user.uid !== p.fromUid &&
+      normalizedText.includes(`@${user.userName.split(' ')[0].toLocaleLowerCase()}`)
+    );
+
+    await Promise.all(targets.map(user => this.createNotification({
+      toUid: user.uid,
+      fromUid: p.fromUid,
+      fromName: p.fromName,
+      fromAvatar: p.fromAvatar,
+      type: 'mention',
+      postId: p.postId,
+      reelId: p.reelId,
+      text: p.text.trim().slice(0, 100)
+    })));
+  }
+
+  notifyRepost(p: { toUid: string; fromUid: string; fromName: string; fromAvatar: string; postId?: string; reelId?: string }): Promise<void> {
+    return this.createNotification({ ...p, type: 'repost' });
   }
 }

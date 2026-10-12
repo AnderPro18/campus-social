@@ -23,6 +23,7 @@ import {
 import { PostService, ReactionType } from '../../services/post.service';
 import { UserService } from '../../services/user.service';
 import { FollowersComponent } from '../../components/followers/followers.component';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-profile',
@@ -37,6 +38,7 @@ export class ProfileComponent {
   firestore = inject(Firestore);
   postService = inject(PostService);
   userService = inject(UserService);
+  private notificationService = inject(NotificationService);
 
   user: any = null;
 
@@ -237,6 +239,7 @@ export class ProfileComponent {
   async reactToReel(reel: any, type: ReactionType) {
     if (!this.user) return;
 
+    const previousReaction = reel.userReaction;
     const result = await this.postService.applyReactionToReel(
       reel.id,
       this.user.uid,
@@ -245,6 +248,21 @@ export class ProfileComponent {
 
     reel.likes = result.total;
     reel.userReaction = result.userReaction;
+
+    if (previousReaction !== result.userReaction && result.userReaction && reel.uid) {
+      try {
+        await this.notificationService.createNotification({
+          toUid: reel.uid,
+          fromUid: this.user.uid,
+          fromName: this.user.displayName || 'Usuario',
+          fromAvatar: this.avatar || this.user.photoURL || '',
+          type: 'reaction',
+          reelId: reel.id
+        });
+      } catch (error) {
+        console.error('No se pudo notificar la reacción al reel:', error);
+      }
+    }
   }
 
   // =============================
@@ -253,12 +271,26 @@ export class ProfileComponent {
   async addReelComment(reel: any) {
     if (!this.user || !reel.newComment?.trim()) return;
 
+    const text = reel.newComment.trim();
     await this.postService.addCommentReel(reel.id!, {
       userId: this.user.uid,
       userName: this.user.displayName,
       userAvatar: this.avatar || this.user.photoURL || '',
-      content: reel.newComment
+      content: text
     });
+
+    try {
+      await this.notificationService.notifyReelComment({
+        toUid: reel.uid,
+        fromUid: this.user.uid,
+        fromName: this.user.displayName || 'Usuario',
+        fromAvatar: this.avatar || this.user.photoURL || '',
+        reelId: reel.id,
+        text
+      });
+    } catch (error) {
+      console.error('No se pudo notificar el comentario al reel:', error);
+    }
 
     reel.commentsCount = (reel.commentsCount || 0) + 1;
     reel.newComment = '';
@@ -382,6 +414,20 @@ export class ProfileComponent {
   createdAt: serverTimestamp()
 });
       post.likesCount = (post.likesCount || 0) + 1;
+
+      if (post.userId) {
+        try {
+          await this.notificationService.notifyReaction({
+            toUid: post.userId,
+            fromUid: this.user.uid,
+            fromName: this.user.displayName || 'Usuario',
+            fromAvatar: this.avatar || this.user.photoURL || '',
+            postId: post.id
+          });
+        } catch (error) {
+          console.error('No se pudo notificar la reacción:', error);
+        }
+      }
     }
   }
 
@@ -397,13 +443,29 @@ export class ProfileComponent {
 
     const commentsRef = collection(this.firestore, `posts/${post.id}/comments`);
 
+    const text = post.newComment.trim();
     await addDoc(commentsRef, {
       userId: this.user.uid,
       userName: this.user.displayName,
       userAvatar: this.avatar || this.user.photoURL || '',
-      text: post.newComment,
+      text,
       createdAt: serverTimestamp()
     });
+
+    if (post.userId) {
+      try {
+        await this.notificationService.notifyComment({
+          toUid: post.userId,
+          fromUid: this.user.uid,
+          fromName: this.user.displayName || 'Usuario',
+          fromAvatar: this.avatar || this.user.photoURL || '',
+          postId: post.id,
+          text
+        });
+      } catch (error) {
+        console.error('No se pudo notificar el comentario:', error);
+      }
+    }
 
     post.newComment = '';
     post.commentsCount = (post.commentsCount || 0) + 1;
@@ -422,6 +484,22 @@ export class ProfileComponent {
       repostedByName: this.user.displayName,
       createdAt: serverTimestamp()
     });
+
+    const originalUid = item.uid || item.userId || item.originalAuthorId;
+    try {
+      if (originalUid) {
+        const isReel = item.type === 'reel' || !!item.videoUrl && !!item.uid;
+        await this.notificationService.notifyRepost({
+          toUid: originalUid,
+          fromUid: this.user.uid,
+          fromName: this.user.displayName || 'Usuario',
+          fromAvatar: this.avatar || this.user.photoURL || '',
+          ...(isReel ? { reelId: item.id } : { postId: item.id })
+        });
+      }
+    } catch (error) {
+      console.error('No se pudo notificar el repost:', error);
+    }
 
     item.repostsCount = (item.repostsCount || 0) + 1;
   }

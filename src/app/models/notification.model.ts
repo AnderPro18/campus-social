@@ -2,6 +2,7 @@ import { Timestamp } from '@angular/fire/firestore';
 
 export type NotificationType =
   | 'comment'
+  | 'comment_reaction'
   | 'reaction'
   | 'friend_request'
   | 'friend_accepted'
@@ -21,8 +22,10 @@ export interface AppNotification {
   postId?: string;
   chatId?: string;
   friendRequestId?: string;
+  commentId?: string;
   text?: string;
   reelId?: string;
+  processed?: boolean;
   read: boolean;
   createdAt: Timestamp | Date;
 }
@@ -37,6 +40,7 @@ export interface NotificationPayload {
   postId?: string;
   chatId?: string;
   friendRequestId?: string;
+  commentId?: string;
   text?: string;
   reelId?: string;
 }

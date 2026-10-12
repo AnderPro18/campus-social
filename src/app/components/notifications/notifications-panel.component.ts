@@ -27,6 +27,7 @@ export class NotificationsPanelComponent {
   getLabel(type: NotificationType): string {
     const labels: Record<NotificationType, string> = {
       comment:         'comentó tu publicación',
+      comment_reaction:'reaccionó a tu comentario',
       reaction:        'reaccionó a tu publicación',
       friend_request:  'te envió una solicitud de amistad',
       friend_accepted: 'aceptó tu solicitud de amistad',
@@ -42,6 +43,7 @@ export class NotificationsPanelComponent {
   getIcon(type: NotificationType): string {
     const icons: Record<NotificationType, string> = {
       comment:         'bi-chat-left-text',
+      comment_reaction:'bi-heart',
       reaction:        'bi-heart',
       friend_request:  'bi-person-plus',
       friend_accepted: 'bi-person-check',
@@ -71,12 +73,14 @@ export class NotificationsPanelComponent {
 
     switch (n.type) {
       case 'comment':
+      case 'comment_reaction':
       case 'reaction':
       case 'new_post':
       case 'mention':
       case 'repost':
       case 'reply':
         if (n.postId) this.router.navigate(['/post', n.postId]);
+        else if (n.reelId) this.router.navigate(['/reels'], { queryParams: { reelId: n.reelId } });
         break;
       case 'message':
         this.router.navigate(['/chat']);

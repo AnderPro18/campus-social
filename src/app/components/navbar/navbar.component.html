@@ -114,61 +114,16 @@
         </span>
       </div>
 <div class="notification-wrapper">
-
-  <i
-    class="bi bi-bell"
-    (click)="showNotifications = !showNotifications">
-
-  </i>
-
-  <span
-    class="notification-badge"
-    *ngIf="notifications.length > 0">
-
-{{ unreadNotificationsCount }}
+  <i class="bi bi-bell" (click)="toggleNotifications()" title="Notificaciones"></i>
+  <span class="notification-badge" *ngIf="notificationService.unreadCount() > 0">
+    {{ notificationService.unreadCount() > 99 ? '99+' : notificationService.unreadCount() }}
   </span>
-
-  <div
-    class="notifications-panel"
-    *ngIf="showNotifications">
-
-    <div
-  class="notification-item"
-  [class.unread]="!n.read"
-  *ngFor="let n of notifications"
-  (click)="openNotification(n)">
-
-      <img
-        [src]="n.fromAvatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'"
-        class="notif-avatar">
-
-      <div class="notif-content">
-
-        <b>{{ n.fromName }}</b>
-
-        <span *ngIf="n.type === 'comment'">
-          comentó tu publicación
-        </span>
-
-        <span *ngIf="n.type === 'reaction'">
-          reaccionó a tu publicación
-        </span>
-
-      </div>
-
-    </div>
-
-    <div
-      class="no-results"
-      *ngIf="notifications.length === 0">
-
-      No tienes notificaciones
-
-    </div>
-
-  </div>
-
-</div>      <i class="bi bi-microsoft" (click)="openTeams()"></i>
+  <app-notifications-panel
+    *ngIf="showNotifications"
+    (close)="showNotifications = false">
+  </app-notifications-panel>
+</div>
+      <i class="bi bi-microsoft" (click)="openTeams()"></i>
       <i class="bi bi-mortarboard" (click)="openMoodle()"></i>
     </div>
 
