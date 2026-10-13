@@ -53,39 +53,46 @@ export class UserProfileComponent implements OnInit {
   Yalosigue = false;
   followLoading = false;
 
-  async ngOnInit() {
-  this.route.paramMap.subscribe(async params => {
-    const uid = params.get('id');
-    if (!uid) return;
+    async ngOnInit() {
+    this.route.paramMap.subscribe(async params => {
+      const uid = params.get('id');
+      if (!uid) return;
 
-    this.loading = true;
-    this.notFound = false;
-    this.profileUser = null;
-    this.posts = [];
-    this.reels = [];
+      this.loading = true;
+      this.notFound = false;
+      this.profileUser = null;
+      this.posts = [];
+      this.reels = [];
 
-    try {
-      const me = await firstValueFrom(this.auth.user$);
-      this.myUid = me?.uid || '';
+      try {
+        const me = await firstValueFrom(this.auth.user$);
+        this.myUid = me?.uid || '';
 
-      if (me?.uid === uid) {
-        this.router.navigate(['/profile']);
+        if (me?.uid === uid) {
+          this.router.navigate(['/profile']);
+          return;
+        }
+
+        await this.loadProfile(uid);
+      } catch (err) {
+        console.error('ERROR EN ngOnInit:', err);
+        this.loading = false;
+        this.notFound = true;
         return;
       }
 
-      await this.loadProfile(uid);
-      await this.loadFollowState(uid);
-      await this.loadFriendStatus(uid);
-      await this.loadFriendsCount(uid);
-      await this.loadFollowCounts(uid);
+      if (this.notFound) return;
 
-    } catch (err) {
-      console.error("ERROR EN ngOnInit:", err);
-      this.loading = false;
-      this.notFound = true;
-    }
-  });
-}
+      // Seguimiento, amistad y contadores son datos secundarios: si alguno falla
+      // (por ejemplo por las reglas de Firestore), el perfil igual se muestra.
+      await Promise.all([
+        this.loadFollowState(uid),
+        this.loadFriendStatus(uid),
+        this.loadFriendsCount(uid),
+        this.loadFollowCounts(uid),
+      ].map(task => task.catch(err => console.error('Error cargando datos secundarios del perfil:', err))));
+    });
+  }
 
   async loadProfile(uid: string) {
   this.loading = true;
