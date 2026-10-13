@@ -11,6 +11,7 @@ import { ChatService } from '../../services/chat.service';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { FollowersComponent } from '../../components/followers/followers.component';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-user-profile',
@@ -26,6 +27,7 @@ export class UserProfileComponent implements OnInit {
   private auth = inject(AuthService);
   private chatService = inject(ChatService);
   private userService = inject(UserService);
+  private notificationService = inject(NotificationService);
 
   profileUser: any = null;
   posts: any[] = [];
@@ -249,6 +251,20 @@ export class UserProfileComponent implements OnInit {
       });
       this.friendRequestId = ref.id;
       this.friendStatus = 'pending-sent';
+      const user = this.auth.currentUser;
+      if (user) {
+        try {
+          await this.notificationService.notifyFriendRequest({
+            toUid: this.profileUser.id,
+            fromUid: user.uid,
+            fromName: user.displayName || 'Usuario',
+            fromAvatar: user.photoURL || '',
+            friendRequestId: ref.id
+          });
+        } catch (error) {
+          console.error('No se pudo notificar la solicitud de amistad:', error);
+        }
+      }
     } catch (e) {
       console.error('Error enviando solicitud:', e);
     } finally {
@@ -261,6 +277,20 @@ export class UserProfileComponent implements OnInit {
     this.friendActionLoading = true;
     try {
       await updateDoc(doc(this.firestore, `friendRequests/${this.friendRequestId}`), { status: 'accepted' });
+      try {
+        await this.notificationService.markFriendRequestProcessed(this.myUid, this.friendRequestId);
+        const user = this.auth.currentUser;
+        if (user && this.profileUser?.id) {
+          await this.notificationService.notifyFriendAccepted({
+            toUid: this.profileUser.id,
+            fromUid: user.uid,
+            fromName: user.displayName || 'Usuario',
+            fromAvatar: user.photoURL || ''
+          });
+        }
+      } catch (error) {
+        console.error('No se pudo notificar la aceptación de amistad:', error);
+      }
       this.friendStatus = 'friends';
       if (this.profileUser?.id) await this.loadFriendsCount(this.profileUser.id);
     } catch (e) {
@@ -275,6 +305,11 @@ export class UserProfileComponent implements OnInit {
     this.friendActionLoading = true;
     try {
       await updateDoc(doc(this.firestore, `friendRequests/${this.friendRequestId}`), { status: 'rejected' });
+      try {
+        await this.notificationService.markFriendRequestProcessed(this.myUid, this.friendRequestId);
+      } catch (error) {
+        console.error('No se pudo actualizar la notificación de solicitud:', error);
+      }
       this.friendStatus = 'none';
       this.friendRequestId = null;
     } catch (e) {

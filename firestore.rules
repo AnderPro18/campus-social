@@ -1,0 +1,430 @@
+rules_version = '2';
+
+service cloud.firestore {
+
+  match /databases/{database}/documents {
+
+    /* =====================================================
+       FUNCIONES AUXILIARES
+    ===================================================== */
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function isChatMember(chatId) {
+      return isAuthenticated()
+        && request.auth.uid in
+           get(/databases/$(database)/documents/chats/$(chatId)).data.members;
+    }
+
+    function isCallParticipant(callId) {
+      let call = get(/databases/$(database)/documents/calls/$(callId)).data;
+      return isAuthenticated()
+        && (
+          request.auth.uid == call.callerId
+          || request.auth.uid in call.calleeIds
+        );
+    }
+
+    function isGroupAdmin(chatId) {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/chats/$(chatId)).data.get('adminUid', '') == request.auth.uid;
+    }
+
+    // Rol global del usuario (para el panel de moderación). Requiere leer
+    // su propio documento de /users — cuidado con el costo extra de lectura
+    // en reglas que se evalúan muy seguido.
+    function isModerator() {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') in ['admin', 'moderator'];
+    }
+
+    // Solo compara si los campos modificados están dentro de una lista permitida
+    function onlyChangedFields(allowedFields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowedFields);
+    }
+
+    function validProfileData() {
+      return (!('displayName' in request.resource.data)
+          || (request.resource.data.displayName is string
+            && request.resource.data.displayName.size() > 0
+            && request.resource.data.displayName.size() <= 80))
+        && (!('bio' in request.resource.data)
+          || (request.resource.data.bio is string
+            && request.resource.data.bio.size() <= 300))
+        && (!('location' in request.resource.data)
+          || (request.resource.data.location is string
+            && request.resource.data.location.size() <= 100))
+        && (!('careerOrArea' in request.resource.data)
+          || (request.resource.data.careerOrArea is string
+            && request.resource.data.careerOrArea.size() <= 100))
+        && (!('birthPlace' in request.resource.data)
+          || (request.resource.data.birthPlace is string
+            && request.resource.data.birthPlace.size() <= 100))
+        && (!('avatar' in request.resource.data)
+          || (request.resource.data.avatar is string
+            && request.resource.data.avatar.size() <= 400000))
+        && (!('cover' in request.resource.data)
+          || (request.resource.data.cover is string
+            && request.resource.data.cover.size() <= 400000));
+    }
+
+    function validProfileChanges() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return (!changed.hasAny(['displayName'])
+          || (request.resource.data.displayName is string
+            && request.resource.data.displayName.size() > 0
+            && request.resource.data.displayName.size() <= 80))
+        && (!changed.hasAny(['bio'])
+          || (request.resource.data.bio is string
+            && request.resource.data.bio.size() <= 300))
+        && (!changed.hasAny(['location'])
+          || (request.resource.data.location is string
+            && request.resource.data.location.size() <= 100))
+        && (!changed.hasAny(['careerOrArea'])
+          || (request.resource.data.careerOrArea is string
+            && request.resource.data.careerOrArea.size() <= 100))
+        && (!changed.hasAny(['birthPlace'])
+          || (request.resource.data.birthPlace is string
+            && request.resource.data.birthPlace.size() <= 100))
+        && (!changed.hasAny(['avatar'])
+          || (request.resource.data.avatar is string
+            && request.resource.data.avatar.size() <= 400000))
+        && (!changed.hasAny(['cover'])
+          || (request.resource.data.cover is string
+            && request.resource.data.cover.size() <= 400000));
+    }
+
+    /* =====================================================
+       USERS
+    ===================================================== */
+
+    match /users/{uid} {
+
+      allow read: if isAuthenticated();
+
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly([
+          'displayName', 'email', 'fechaNacimiento', 'ciudad',
+          'departamento', 'descripcion', 'carrera', 'area', 'updatedAt',
+          'bio', 'location', 'career', 'careerOrArea', 'birthDate',
+          'birthPlace', 'avatar', 'cover'
+        ])
+        && validProfileData();
+
+      // FIX: el dueño puede actualizar su perfil, pero NO puede tocar
+      // 'role' él mismo — eso evita que cualquier usuario se auto-asigne
+      // admin/moderator. Solo otro moderador (o la consola de Firebase)
+      // puede cambiar el rol de alguien.
+      allow update: if isOwner(uid)
+        && validProfileChanges()
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
+          || isModerator()
+        );
+
+      allow delete: if isOwner(uid);
+
+      match /notifications/{notificationId} {
+        allow read:   if isOwner(uid);
+        allow create: if isAuthenticated()
+          && request.resource.data.fromUid == request.auth.uid;
+        allow update: if isOwner(uid);
+        allow delete: if isOwner(uid);
+      }
+
+      match /savedPosts/{postId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    /* =====================================================
+       POSTS
+       FIX: update ya no está abierto a cualquier autenticado.
+       El dueño tiene control total; cualquier otro usuario
+       solo puede tocar los contadores agregados (reacciones,
+       comentarios, reposts), que es lo único que legítimamente
+       se actualiza desde fuera del dueño.
+    ===================================================== */
+
+    match /posts/{postId} {
+
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if isAuthenticated()
+        && (
+          request.auth.uid == resource.data.userId
+          || onlyChangedFields(['likesCount', 'commentsCount', 'repostsCount'])
+        );
+
+      allow delete: if isAuthenticated()
+        && request.auth.uid == resource.data.userId;
+
+      match /reactions/{userId} {
+        allow read:                   if isAuthenticated();
+        allow create, update, delete: if request.auth.uid == userId;
+      }
+
+      match /comments/{commentId} {
+        allow read:   if isAuthenticated();
+        allow create: if isAuthenticated()
+          && request.auth.uid == request.resource.data.userId;
+
+        allow update: if isAuthenticated()
+          && (
+            request.auth.uid == resource.data.userId
+            || onlyChangedFields(['reactionsCount', 'repliesCount'])
+          );
+
+        allow delete: if isAuthenticated()
+          && request.auth.uid == resource.data.userId;
+
+        match /reactions/{userId} {
+          allow read:                   if isAuthenticated();
+          allow create, update, delete: if request.auth.uid == userId;
+        }
+
+        match /replies/{replyId} {
+          allow read:   if isAuthenticated();
+          allow create: if isAuthenticated()
+            && request.auth.uid == request.resource.data.userId;
+
+          allow update: if isAuthenticated()
+            && (
+              request.auth.uid == resource.data.userId
+              || onlyChangedFields(['reactionsCount', 'repliesCount'])
+            );
+
+          allow delete: if isAuthenticated()
+            && request.auth.uid == resource.data.userId;
+        }
+      }
+    }
+
+    /* =====================================================
+       REELS
+       FIX: create ahora exige que uid == auth.uid (antes se
+       podía crear un reel a nombre de otro usuario). update
+       sigue el mismo patrón owner-vs-contadores que posts.
+    ===================================================== */
+
+    match /reels/{reelId} {
+
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.uid == request.auth.uid;
+
+      allow update: if isAuthenticated()
+        && (
+          request.auth.uid == resource.data.uid
+          || onlyChangedFields(['likes', 'commentsCount', 'repostsCount'])
+        );
+
+      allow delete: if isAuthenticated()
+        && request.auth.uid == resource.data.uid;
+
+      match /reactions/{userId} {
+        allow read:                   if isAuthenticated();
+        allow create, update, delete: if isOwner(userId);
+      }
+
+      match /comments/{commentId} {
+        allow read:   if isAuthenticated();
+        allow create: if isAuthenticated()
+          && request.auth.uid == request.resource.data.userId;
+
+        allow update: if isAuthenticated()
+          && (
+            request.auth.uid == resource.data.userId
+            || onlyChangedFields(['reactionsCount', 'repliesCount'])
+          );
+
+        allow delete: if isAuthenticated()
+          && request.auth.uid == resource.data.userId;
+
+        match /reactions/{userId} {
+          allow read:                   if isAuthenticated();
+          allow create, update, delete: if isOwner(userId);
+        }
+
+        match /replies/{replyId} {
+          allow read:   if isAuthenticated();
+          allow create: if isAuthenticated()
+            && request.auth.uid == request.resource.data.userId;
+
+          allow update: if isAuthenticated()
+            && (
+              request.auth.uid == resource.data.userId
+              || onlyChangedFields(['reactionsCount', 'repliesCount'])
+            );
+
+          allow delete: if isAuthenticated()
+            && request.auth.uid == resource.data.userId;
+        }
+      }
+    }
+
+    /* =====================================================
+       FRIEND REQUESTS
+       FIX: el destinatario solo puede tocar 'status' al
+       aceptar/rechazar; ya no puede reescribir 'from' u otros
+       campos en el mismo write.
+    ===================================================== */
+
+    match /friendRequests/{requestId} {
+
+      allow read: if isAuthenticated();
+
+      allow create: if isAuthenticated()
+        && request.auth.uid == request.resource.data.from
+        && request.resource.data.status == "pending"
+        && request.resource.data.keys().hasOnly([
+          'from', 'to', 'status', 'createdAt'
+        ]);
+
+      allow update: if isAuthenticated()
+        && request.auth.uid == resource.data.to
+        && request.resource.data.status in ['accepted', 'rejected']
+        && onlyChangedFields(['status']);
+
+      allow delete: if isAuthenticated()
+        && (
+          request.auth.uid == resource.data.from
+          || request.auth.uid == resource.data.to
+        );
+    }
+
+    /* =====================================================
+       CHATS
+       FIX (crítico): antes cualquier miembro podía reescribir
+       CUALQUIER campo, incluido adminUid y members -> permitía
+       auto-ascenderse a admin y luego borrar el grupo, o
+       expulsar a otros. Ahora se separan dos niveles:
+       - Miembros normales: solo metadata de conversación.
+       - Solo el admin actual: adminUid, members, groupName,
+         groupPhoto, type.
+       Si tu app permite que CUALQUIER miembro edite el nombre/
+       foto del grupo, mueve esos dos campos a la primera lista.
+    ===================================================== */
+
+    match /chats/{chatId} {
+
+      allow read: if isAuthenticated()
+        && request.auth.uid in resource.data.members;
+
+      allow create: if isAuthenticated()
+        && request.auth.uid in request.resource.data.members;
+
+      allow update: if isAuthenticated()
+        && request.auth.uid in resource.data.members
+        && (
+          onlyChangedFields([
+            'lastMessage', 'lastUpdated', 'favorite',
+            'temporalMessages', 'temporalDuration', 'listLabel',
+            'unreadCount', 'memberProfiles'
+          ])
+          || (
+            isGroupAdmin(chatId)
+            && onlyChangedFields([
+              'adminUid', 'members', 'groupName', 'groupPhoto', 'type'
+            ])
+          )
+        );
+
+      // Solo el admin del grupo puede eliminarlo permanentemente.
+      // (Los chats 1 a 1 no tienen adminUid, así que nunca cumplen esta condición
+      // — para esos se usa "vaciar/eliminar para mí", no un delete real.)
+      allow delete: if isGroupAdmin(chatId);
+
+      match /messages/{messageId} {
+
+        allow read: if isChatMember(chatId);
+
+        allow create: if isChatMember(chatId)
+          && request.resource.data.senderId == request.auth.uid;
+
+        allow update: if isAuthenticated()
+          && (
+            // El autor puede editar el contenido de su propio mensaje,
+            // pero no puede falsificar quién lo envió ni cuándo.
+            (
+              resource.data.senderId == request.auth.uid
+              && !request.resource.data.diff(resource.data).affectedKeys()
+                    .hasAny(['senderId', 'chatId', 'createdAt'])
+            )
+
+            ||
+
+            // Otros miembros solo pueden tocar readBy y deletedFor
+            (
+              isChatMember(chatId)
+              && onlyChangedFields(['readBy', 'deletedFor'])
+            )
+          );
+
+        // Solo se pueden borrar mensajes en bloque cuando el admin
+        // está eliminando el grupo completo.
+        allow delete: if isGroupAdmin(chatId);
+      }
+    }
+
+    /* =====================================================
+       REPORTS  (moderación de contenido)
+       Cualquier autenticado puede crear un reporte sobre sí
+       mismo como reportero. Solo moderadores/admins pueden
+       leer la lista completa o resolverlos — un reporte no
+       debe ser visible para el usuario reportado.
+    ===================================================== */
+
+    match /reports/{reportId} {
+
+      allow create: if isAuthenticated()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      allow read, update, delete: if isModerator();
+    }
+
+    /* =====================================================
+       CALLS  (colección raíz — WebRTC signaling)
+    ===================================================== */
+
+    match /calls/{callId} {
+
+      allow read: if isAuthenticated()
+        && (
+          request.auth.uid == resource.data.callerId
+          || request.auth.uid in resource.data.calleeIds
+        );
+
+      allow create: if isAuthenticated()
+        && request.resource.data.callerId == request.auth.uid;
+
+      allow update: if isAuthenticated()
+        && (
+          request.auth.uid == resource.data.callerId
+          || request.auth.uid in resource.data.calleeIds
+        );
+
+      allow delete: if false;
+
+      match /signals/{signalId} {
+
+        allow read: if isCallParticipant(callId);
+
+        allow create: if isCallParticipant(callId)
+          && request.resource.data.from == request.auth.uid;
+
+        allow update, delete: if false;
+      }
+    }
+
+  }
+}

@@ -55,7 +55,6 @@ export interface CommentItem {
   userReaction?: ReactionType;
   reactionsCount?: number;
 }
-
 type ReactionType =
   | 'like'
   | 'love'
@@ -116,6 +115,9 @@ export class FeedComponent implements OnInit {
 mentionResults: { uid: string; userName: string; avatar: string }[] = [];
 mentionActive = false;
 private mentionTimeout: any;
+private postMentionTargets: { uid: string; userName: string }[] = [];
+private repostMentionTargets: { uid: string; userName: string }[] = [];
+private commentMentionTargets: Record<string, { uid: string; userName: string }[]> = {};
 
 // Para repost en feed
 showRepostModal = false;
@@ -363,6 +365,8 @@ repostTags: string[] = [];
 
     const avatarFromDoc = await this.getUserAvatar(user.uid);
 
+    const content = this.newContent.trim();
+    const mentionedUsers = this.postMentionTargets;
     const payload = {
       userId: user.uid,
       userName: user.displayName || 'Usuario',
@@ -370,7 +374,7 @@ repostTags: string[] = [];
 
       type: 'original',
 
-      content: this.newContent.trim(),
+      content,
 
       imageUrl: this.selectedFileBase64 || '',
 
@@ -389,6 +393,18 @@ repostTags: string[] = [];
     );
 
     console.log('POST CREADO:', ref.id);
+    try {
+      await this.notificationService.notifyMentionedUsers({
+        users: mentionedUsers,
+        fromUid: user.uid,
+        fromName: user.displayName || 'Usuario',
+        fromAvatar: avatarFromDoc || user.photoURL || '',
+        text: content,
+        postId: ref.id
+      });
+    } catch (error) {
+      console.error('No se pudieron notificar las menciones:', error);
+    }
 
     // 🔔 Notificar a amigos aceptados
     try {
@@ -418,6 +434,7 @@ repostTags: string[] = [];
 
     // limpiar UI
     this.newContent = '';
+    this.postMentionTargets = [];
     this.selectedFileBase64 = null;
 
     this.showToast('Publicación creada ✔');
@@ -591,7 +608,6 @@ getReactionLabel(type: ReactionType | null): string {
     const prev = this.getLocalReaction(post.id!, uid);
     const avatarFromDoc = await this.getUserAvatar(user.uid);
     const avatar = avatarFromDoc || user.photoURL || '';
-
     if (reaction === null) {
       this.setLocalReaction(post.id!, uid, null);
       if (prev) this.updateLocalDelta(post.id!, 'likesCount', -1);
@@ -613,18 +629,19 @@ getReactionLabel(type: ReactionType | null): string {
           createdAt: serverTimestamp(),
         });
 
-        if (reaction !== null) {
-
-  await this.notificationService.createNotification({
-    toUid: post.userId!,
-    fromUid: user.uid,
-    fromName: user.displayName || 'Usuario',
-    fromAvatar: avatar,
-    type: 'reaction',
-    postId: post.id
-  });
-
-}
+        if (prev !== reaction && post.userId) {
+          try {
+            await this.notificationService.notifyReaction({
+              toUid: post.userId,
+              fromUid: user.uid,
+              fromName: user.displayName || 'Usuario',
+              fromAvatar: avatar,
+              postId: post.id!
+            });
+          } catch (error) {
+            console.error('No se pudo notificar la reacción:', error);
+          }
+        }
       }
 
       
@@ -744,16 +761,6 @@ getReactionLabel(type: ReactionType | null): string {
   const avatarFromDoc = await this.getUserAvatar(user.uid);
   const avatar = avatarFromDoc || user.photoURL || '';
 
-  await this.notificationService.createNotification({
-  toUid: post.userId!,
-  fromUid: user.uid,
-  fromName: user.displayName || 'Usuario',
-  fromAvatar: avatar,
-  type: 'comment',
-  postId: post.id,
-  text: text.trim()
-});
-
   await addDoc(commentsRef, {
     userId: user.uid,
     userName: user.displayName || 'Usuario',
@@ -768,7 +775,37 @@ getReactionLabel(type: ReactionType | null): string {
     { commentsCount: increment(1) }
   );
 
+  if (post.userId) {
+    try {
+      await this.notificationService.notifyComment({
+        toUid: post.userId,
+        fromUid: user.uid,
+        fromName: user.displayName || 'Usuario',
+        fromAvatar: avatar,
+        postId: post.id!,
+        text: text.trim()
+      });
+    } catch (error) {
+      console.error('No se pudo notificar el comentario:', error);
+    }
+  }
+
+  try {
+    const realPost = this.getRealPostPath(post);
+    await this.notificationService.notifyMentionedUsers({
+      users: this.commentMentionTargets[post.id!] || [],
+      fromUid: user.uid,
+      fromName: user.displayName || 'Usuario',
+      fromAvatar: avatar,
+      text: text.trim(),
+      ...(realPost.collection === 'reels' ? { reelId: realPost.id } : { postId: realPost.id })
+    });
+  } catch (error) {
+    console.error('No se pudieron notificar las menciones del comentario:', error);
+  }
+
   this.draftComments[post.id!] = '';
+  delete this.commentMentionTargets[post.id!];
   await this.loadComments(post.id!, realPostId);
   this.showToast('Comentario agregado');
 }
@@ -779,6 +816,8 @@ getReactionLabel(type: ReactionType | null): string {
   async toggleRepost(post: Post) {
     const user = await firstValueFrom(this.authService.user$);
     if (!user) return;
+    const mentionedUsers = this.repostMentionTargets;
+    const repostDescription = this.repostDescription.trim();
 
     const postRef = doc(this.firestore, `posts/${post.id}`);
     try {
@@ -791,7 +830,7 @@ getReactionLabel(type: ReactionType | null): string {
 
     
 
-    await addDoc(collection(this.firestore, 'posts'), {
+    const repostRef = await addDoc(collection(this.firestore, 'posts'), {
       type: 'repost',
     originalPostId: post.id,
     originalAuthorId: post.userId,
@@ -802,7 +841,7 @@ getReactionLabel(type: ReactionType | null): string {
     userName: user.displayName || 'Usuario',
     repostedById: user.uid,
     repostedByName: user.displayName || 'Usuario',
-    content: this.repostDescription || post.content,
+    content: repostDescription || post.content,
     tags: this.repostTags,
     imageUrl: post.imageUrl || '',
     createdAt: serverTimestamp(),
@@ -810,8 +849,36 @@ getReactionLabel(type: ReactionType | null): string {
     likesCount: 0, commentsCount: 0, repostsCount: 0,
   });
 
+  const avatar = (await this.getUserAvatar(user.uid)) || user.photoURL || '';
+  const originalAuthorId = post.type === 'repost' ? (post.originalAuthorId || post.userId) : post.userId;
+  try {
+    if (originalAuthorId) {
+      const originalPath = this.getRealPostPath(post);
+      await this.notificationService.notifyRepost({
+        toUid: originalAuthorId,
+        fromUid: user.uid,
+        fromName: user.displayName || 'Usuario',
+        fromAvatar: avatar,
+        ...(originalPath.collection === 'reels'
+          ? { reelId: originalPath.id }
+          : { postId: originalPath.id })
+      });
+    }
+    await this.notificationService.notifyMentionedUsers({
+      users: mentionedUsers,
+      fromUid: user.uid,
+      fromName: user.displayName || 'Usuario',
+      fromAvatar: avatar,
+      text: repostDescription,
+      postId: repostRef.id
+    });
+  } catch (error) {
+    console.error('No se pudieron notificar el repost o sus menciones:', error);
+  }
+
   this.showRepostModal = false;
   this.repostTargetPost = null;
+  this.repostMentionTargets = [];
   this.showToast('🔁 Publicación reposteada');
 }
 
@@ -847,14 +914,24 @@ selectMention(user: { uid: string; userName: string }, field: 'newContent' | 're
   const tagName = user.userName.split(' ')[0];
   if (field === 'newContent') {
     this.newContent = this.newContent.replace(/@(\w*)$/, `@${tagName} `);
+    this.addMentionTarget(this.postMentionTargets, user);
   } else if (field === 'repostDescription') {
     this.repostDescription = this.repostDescription.replace(/@(\w*)$/, `@${tagName} `);
     if (!this.repostTags.includes(user.userName)) this.repostTags.push(user.userName);
+    this.addMentionTarget(this.repostMentionTargets, user);
   } else if (commentId) {
     this.draftComments[commentId] = (this.draftComments[commentId] || '').replace(/@(\w*)$/, `@${tagName} `);
+    this.commentMentionTargets[commentId] ??= [];
+    this.addMentionTarget(this.commentMentionTargets[commentId], user);
   }
   this.mentionActive = false;
   this.mentionResults = [];
+}
+
+private addMentionTarget(targets: { uid: string; userName: string }[], user: { uid: string; userName: string }): void {
+  if (!targets.some(target => target.uid === user.uid)) {
+    targets.push({ uid: user.uid, userName: user.userName });
+  }
 }
 
 onCommentInput(event: Event, postId: string) {
@@ -961,6 +1038,21 @@ async confirmRepost() {
       text: text.trim()
     }
   );
+
+  if (comment.userId) {
+    try {
+      await this.notificationService.notifyReply({
+        toUid: comment.userId,
+        fromUid: user.uid,
+        fromName: user.displayName || 'Usuario',
+        fromAvatar: avatar,
+        postId: post.id,
+        text: text.trim()
+      });
+    } catch (error) {
+      console.error('No se pudo notificar la respuesta:', error);
+    }
+  }
 
   this.replyDrafts[comment.id] = '';
   this.activeReplyCommentId = null;
@@ -1204,13 +1296,28 @@ async selectCommentReaction(post: any, comment: any, reactionType: string) {
     comment.userReaction = reactionType as ReactionType;
     if (!prev) comment.reactionsCount = (comment.reactionsCount || 0) + 1;
     const avatarFromDoc = await this.getUserAvatar(uid);
+    const avatar = avatarFromDoc || user.photoURL || '';
     await setDoc(ref, {
       type: reactionType,
       userId: uid,
       userName: user.displayName || 'Usuario',
-      userAvatar: avatarFromDoc || user.photoURL || '',
+      userAvatar: avatar,
       createdAt: serverTimestamp(),
     });
+    if (comment.userId) {
+      try {
+        await this.notificationService.notifyCommentReaction({
+          toUid: comment.userId,
+          fromUid: uid,
+          fromName: user.displayName || 'Usuario',
+          fromAvatar: avatar,
+          postId: realPostId,
+          commentId: comment.id
+        });
+      } catch (error) {
+        console.error('No se pudo notificar la reacción al comentario:', error);
+      }
+    }
   }
 
   this.commentReactionMenuId = null;
@@ -1256,13 +1363,28 @@ async toggleQuickCommentReaction(post: any, c: CommentItem) {
     c.userReaction = 'like';
     c.reactionsCount = (c.reactionsCount || 0) + 1;
     const avatarFromDoc = await this.getUserAvatar(uid);
+    const avatar = avatarFromDoc || user.photoURL || '';
     await setDoc(ref, {
       type: 'like',
       userId: uid,
       userName: user.displayName || 'Usuario',
-      userAvatar: avatarFromDoc || user.photoURL || '',
+      userAvatar: avatar,
       createdAt: serverTimestamp(),
     });
+    if (c.userId) {
+      try {
+        await this.notificationService.notifyCommentReaction({
+          toUid: c.userId,
+          fromUid: uid,
+          fromName: user.displayName || 'Usuario',
+          fromAvatar: avatar,
+          postId: realPostId,
+          commentId: c.id!
+        });
+      } catch (error) {
+        console.error('No se pudo notificar la reacción al comentario:', error);
+      }
+    }
   }
 }
 

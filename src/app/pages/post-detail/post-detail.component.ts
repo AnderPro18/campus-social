@@ -17,6 +17,7 @@ import {
   setDoc
 } from '@angular/fire/firestore';
 import { AuthService } from '../../services/auth.service';
+import { NotificationService } from '../../services/notification.service';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
@@ -32,6 +33,7 @@ export class PostDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private firestore = inject(Firestore);
   auth = inject(AuthService);
+  private notificationService = inject(NotificationService);
 
   post: any = null;
   comments: any[] = [];
@@ -122,6 +124,21 @@ export class PostDetailComponent implements OnInit {
       { commentsCount: increment(1) }
     );
 
+    if (this.post.userId) {
+      try {
+        await this.notificationService.notifyComment({
+          toUid: this.post.userId,
+          fromUid: user.uid,
+          fromName: user.displayName || 'Usuario',
+          fromAvatar: user.photoURL || '',
+          postId: this.post.id,
+          text: this.newComment.trim()
+        });
+      } catch (error) {
+        console.error('No se pudo notificar el comentario:', error);
+      }
+    }
+
     this.newComment = '';
   }
 
@@ -171,7 +188,8 @@ export class PostDetailComponent implements OnInit {
       `posts/${this.post.id}/reactions/${user.uid}`
     );
 
-    if (this.userReaction === type) {
+    const previousReaction = this.userReaction;
+    if (previousReaction === type) {
       await deleteDoc(ref);
       this.userReaction = null;
     } else {
@@ -181,6 +199,20 @@ export class PostDetailComponent implements OnInit {
         createdAt: serverTimestamp()
       });
       this.userReaction = type;
+
+      if (previousReaction !== type && this.post.userId) {
+        try {
+          await this.notificationService.notifyReaction({
+            toUid: this.post.userId,
+            fromUid: user.uid,
+            fromName: user.displayName || 'Usuario',
+            fromAvatar: user.photoURL || '',
+            postId: this.post.id
+          });
+        } catch (error) {
+          console.error('No se pudo notificar la reacción:', error);
+        }
+      }
     }
 
     this.reactionMenuVisible = false;

@@ -3,29 +3,33 @@
   <!-- ================= HEADER ================= -->
   <div class="profile-header">
     <div class="cover-container">
-      <img class="cover" [src]="cover || 'https://picsum.photos/1000/300'">
+      <img class="cover" [src]="cover || 'https://picsum.photos/1000/300'" alt="Portada del perfil">
 
       <div class="cover-buttons">
         <button (click)="coverInput.click()">Editar portada</button>
         <button *ngIf="cover" (click)="removeCover()">❌ Quitar</button>
       </div>
 
-      <input type="file" hidden #coverInput (change)="onCoverSelected($event)" />
+      <input type="file" accept="image/*" hidden #coverInput (change)="onCoverSelected($event)" />
     </div>
 
     <div class="profile-info">
       <div class="avatar-container">
-        <img class="avatar" [src]="avatar || user?.photoURL">
+        <img
+          class="avatar"
+          [src]="avatar || (avatarWasRemoved ? defaultAvatar : user?.photoURL || defaultAvatar)"
+          alt="Foto de perfil"
+        >
 
         <div class="avatar-buttons">
           <button (click)="avatarInput.click()">✏️</button>
           <button *ngIf="avatar" (click)="removeAvatar()">❌</button>
         </div>
 
-        <input type="file" hidden #avatarInput (change)="onAvatarSelected($event)" />
+        <input type="file" accept="image/*" hidden #avatarInput (change)="onAvatarSelected($event)" />
       </div>
 
-      <h2>{{ user?.displayName }}</h2>
+      <h2>{{ profileName || user?.displayName }}</h2>
       <p>{{ user?.email }}</p>
       <div class="follow-stats">
         <button
@@ -61,33 +65,62 @@
   <div class="card">
     <h3>Sobre mí</h3>
 
-    <div *ngIf="!editing">
+    <p *ngIf="profileError" class="profile-feedback error" role="alert">{{ profileError }}</p>
+    <p *ngIf="profileNotice" class="profile-feedback success" role="status">{{ profileNotice }}</p>
+
+    <p *ngIf="profileLoading" class="text-muted" role="status">Cargando información del perfil...</p>
+
+    <div *ngIf="!profileLoading && !editing">
       <p>{{ bio || 'Sin biografía' }}</p>
+      <p><strong>Ubicación:</strong> {{ location || 'No especificada' }}</p>
       <p><strong>Carrera / Área:</strong> {{ careerOrArea || 'No especificado' }}</p>
       <p><strong>Fecha de nacimiento:</strong> {{ birthDate || '---' }}</p>
       <p><strong>Lugar de nacimiento:</strong> {{ birthPlace || '---' }}</p>
 
-      <button class="btn-edit" (click)="editing = true">Editar perfil</button>
+      <button class="btn-edit" type="button" (click)="beginEditing()">Editar perfil</button>
     </div>
 
-    <div *ngIf="editing" class="edit-form">
-      <label>Biografía</label>
-      <textarea [(ngModel)]="bio"></textarea>
+    <form *ngIf="!profileLoading && editing" class="edit-form" #profileForm="ngForm" (ngSubmit)="saveProfile()">
+      <label for="profileName">Nombre</label>
+      <input
+        id="profileName"
+        name="displayName"
+        type="text"
+        [(ngModel)]="displayName"
+        required
+        maxlength="80"
+        autocomplete="name"
+      >
 
-      <label>Carrera / Área laboral</label>
-      <input type="text" [(ngModel)]="careerOrArea">
+      <label for="profileBio">Biografía</label>
+      <textarea id="profileBio" name="bio" [(ngModel)]="bio" maxlength="300"></textarea>
 
-      <label>Fecha de nacimiento</label>
-      <input type="date" [(ngModel)]="birthDate">
+      <label for="profileLocation">Ubicación</label>
+      <input
+        id="profileLocation"
+        name="location"
+        type="text"
+        [(ngModel)]="location"
+        maxlength="100"
+        autocomplete="address-level2"
+      >
 
-      <label>Lugar de nacimiento</label>
-      <input type="text" [(ngModel)]="birthPlace">
+      <label for="careerOrArea">Carrera / Área laboral</label>
+      <input id="careerOrArea" name="careerOrArea" type="text" [(ngModel)]="careerOrArea" maxlength="100">
+
+      <label for="birthDate">Fecha de nacimiento</label>
+      <input id="birthDate" name="birthDate" type="date" [(ngModel)]="birthDate">
+
+      <label for="birthPlace">Lugar de nacimiento</label>
+      <input id="birthPlace" name="birthPlace" type="text" [(ngModel)]="birthPlace" maxlength="100">
 
       <div class="d-flex gap-2 mt-3">
-        <button class="btn-save" (click)="saveProfile()">Guardar</button>
-        <button class="btn-cancel" (click)="editing = false">Cancelar</button>
+        <button class="btn-save" type="submit" [disabled]="profileSaving || profileForm.invalid">
+          {{ profileSaving ? 'Guardando...' : 'Guardar' }}
+        </button>
+        <button class="btn-cancel" type="button" [disabled]="profileSaving" (click)="cancelEditing()">Cancelar</button>
       </div>
-    </div>
+    </form>
   </div>
 
   <!-- ================= ACTIVIDAD ================= -->

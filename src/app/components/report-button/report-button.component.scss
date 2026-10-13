@@ -1,0 +1,92 @@
+@use '../../../styles/mixins' as m;
+
+.report-trigger {
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  cursor: pointer;
+  opacity: 0.55;
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  transition: opacity .18s ease, background .18s ease;
+  @include m.focus-ring;
+
+  &:hover {
+    opacity: 1;
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+  }
+}
+
+.report-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 20, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.report-modal-content {
+  @include m.glass-surface(var(--r-lg));
+  width: 90%;
+  max-width: 400px;
+  padding: var(--sp-5);
+  color: var(--text-primary);
+}
+
+.report-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sp-2);
+
+  h4 { margin: 0; font-family: var(--font-display); }
+
+  .close-btn {
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--text-secondary);
+  }
+}
+
+.report-modal-subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: var(--sp-3);
+}
+
+.reason-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.reason-option {
+  @include m.neu-flat(var(--r-sm));
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 14px;
+
+  input { accent-color: var(--brand-blue); }
+}
+
+.details-input {
+  width: 100%;
+  margin-bottom: var(--sp-3);
+  font-family: var(--font-body);
+  resize: none;
+}
+
+.report-thanks {
+  text-align: center;
+  padding: var(--sp-3) 0;
+
+  p { margin-bottom: var(--sp-4); color: var(--text-secondary); }
+}

@@ -8,6 +8,7 @@ import { provideFirebaseApp } from '@angular/fire/app';
 import { initializeApp } from '@firebase/app';
 import { provideAuth, getAuth } from '@angular/fire/auth';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
+import { provideMessaging, getMessaging } from '@angular/fire/messaging';
 import { provideHttpClient } from '@angular/common/http';  // ← necesario para UploadService
 
 // Tu archivo de environment
@@ -23,5 +24,6 @@ export const appConfig: ApplicationConfig = {
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()),
+    provideMessaging(() => getMessaging()),                // ← NUEVO (push)
   ]
 };

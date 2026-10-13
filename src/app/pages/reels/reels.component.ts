@@ -13,6 +13,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { SavedService } from '../../services/saved.service';
 import { Reel } from '../../models/reel.model';
 
+import { ReportButtonComponent } from '../../components/report-button/report-button.component';
+import { NotificationService } from '../../services/notification.service';
+
+
 export interface CommentItem {
   id?: string;
   userId: string;
@@ -27,7 +31,7 @@ export interface CommentItem {
 @Component({
   selector: 'app-reels',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReportButtonComponent],
   templateUrl: './reels.component.html',
   styleUrls: ['./reels.component.scss'],
 })
@@ -37,6 +41,7 @@ export class ReelsComponent implements AfterViewInit {
   auth         = inject(AuthService);
   firestore    = inject(Firestore);
   savedService = inject(SavedService);
+  private notificationService = inject(NotificationService);
   private route  = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -86,6 +91,9 @@ export class ReelsComponent implements AfterViewInit {
   mentionResults: { uid: string; userName: string; avatar: string }[] = [];
   mentionActive = false;
   private mentionTimeout: any;
+  private descriptionMentionTargets: { uid: string; userName: string }[] = [];
+  private repostMentionTargets: { uid: string; userName: string }[] = [];
+  private commentMentionTargets: Record<string, { uid: string; userName: string }[]> = {};
 
   // ─── Toast ─────────────────────────────────────────────────────
   toastMessage: string | null = null;
@@ -177,6 +185,8 @@ export class ReelsComponent implements AfterViewInit {
     const user = await firstValueFrom(this.auth.user$);
     if (!user || !this.selectedFile) return;
 
+    const description = this.description.trim();
+    const mentionedUsers = this.descriptionMentionTargets;
     this.isUploading    = true;
     this.uploadProgress = 0;
 
@@ -185,7 +195,7 @@ export class ReelsComponent implements AfterViewInit {
     this.postService.uploadVideo(this.selectedFile, {
       uid:         user.uid,
       userName:    user.displayName || 'Usuario',
-      description: this.description || '',
+      description,
       avatarUrl:   avatar,
     }).subscribe({
       next: (event: { progress?: number; reel?: any }) => {
@@ -193,7 +203,19 @@ export class ReelsComponent implements AfterViewInit {
           this.uploadProgress = event.progress;
         }
         if (event.reel) {
+          const reelId = event.reel.id || event.reel.reelId;
+          if (reelId) {
+            void this.notificationService.notifyMentionedUsers({
+              users: mentionedUsers,
+              fromUid: user.uid,
+              fromName: user.displayName || 'Usuario',
+              fromAvatar: avatar,
+              text: description,
+              reelId
+            }).catch(error => console.error('No se pudieron notificar las menciones del reel:', error));
+          }
           this.description    = '';
+          this.descriptionMentionTargets = [];
           this.selectedFile   = null;
           this.isUploading    = false;
           this.uploadProgress = null;
@@ -286,6 +308,21 @@ export class ReelsComponent implements AfterViewInit {
       reel.likes  = all.size;
 
       await updateDoc(doc(this.firestore, `reels/${reel.id!}`), { likes: reel.likes });
+
+      if (reaction !== null && prev !== reaction && reel.uid) {
+        try {
+          await this.notificationService.createNotification({
+            toUid: reel.uid,
+            fromUid: uid,
+            fromName: user.displayName || 'Usuario',
+            fromAvatar: avatar,
+            type: 'reaction',
+            reelId: reel.id
+          });
+        } catch (error) {
+          console.error('No se pudo notificar la reacción al reel:', error);
+        }
+      }
 
       const temp: Record<string, ReactionType> = {};
       all.forEach(d => temp[d.id] = d.data()['type']);
@@ -414,15 +451,39 @@ export class ReelsComponent implements AfterViewInit {
     if (!user) return;
 
     const avatar = (await this.getUserAvatar(user.uid)) || user.photoURL || '';
+    const commentText = text.trim();
+    const mentionedUsers = this.commentMentionTargets[reel.id!] || [];
 
     await addDoc(collection(this.firestore, `reels/${reel.id!}/comments`), {
       userId: user.uid, userName: user.displayName || 'Usuario',
-      userAvatar: avatar, text: text.trim(), createdAt: serverTimestamp(),
+      userAvatar: avatar, text: commentText, createdAt: serverTimestamp(),
     });
+
+    try {
+      await this.notificationService.notifyReelComment({
+        toUid: reel.uid,
+        fromUid: user.uid,
+        fromName: user.displayName || 'Usuario',
+        fromAvatar: avatar,
+        reelId: reel.id!,
+        text: commentText
+      });
+      await this.notificationService.notifyMentionedUsers({
+        users: mentionedUsers,
+        fromUid: user.uid,
+        fromName: user.displayName || 'Usuario',
+        fromAvatar: avatar,
+        text: commentText,
+        reelId: reel.id!
+      });
+    } catch (error) {
+      console.error('No se pudieron notificar el comentario o sus menciones:', error);
+    }
 
     await updateDoc(doc(this.firestore, `reels/${reel.id!}`), { commentsCount: increment(1) });
     reel.commentsCount        = (reel.commentsCount || 0) + 1;
     this.draftComments[reel.id!] = '';
+    delete this.commentMentionTargets[reel.id!];
     await this.loadComments(reel.id!);
     this.showToast('Comentario agregado');
   }
@@ -458,6 +519,18 @@ export class ReelsComponent implements AfterViewInit {
         userAvatar: avatar, text: text.trim(), createdAt: serverTimestamp(),
       }
     );
+    try {
+      await this.notificationService.notifyReelReply({
+        toUid: comment.userId,
+        fromUid: user.uid,
+        fromName: user.displayName || 'Usuario',
+        fromAvatar: avatar,
+        reelId: reel.id!,
+        text: text.trim()
+      });
+    } catch (error) {
+      console.error('No se pudo notificar la respuesta al comentario del reel:', error);
+    }
     this.replyDrafts[comment.id!]  = '';
     this.activeReplyCommentId       = null;
     await this.loadReplies(reel.id!, comment.id!);
@@ -538,6 +611,20 @@ export class ReelsComponent implements AfterViewInit {
         userName: user.displayName || 'Usuario',
         userAvatar: avatar, createdAt: serverTimestamp(),
       });
+      if (c.userId) {
+        try {
+          await this.notificationService.notifyCommentReaction({
+            toUid: c.userId,
+            fromUid: user.uid,
+            fromName: user.displayName || 'Usuario',
+            fromAvatar: avatar,
+            reelId: reel.id!,
+            commentId: c.id!
+          });
+        } catch (error) {
+          console.error('No se pudo notificar la reacción al comentario del reel:', error);
+        }
+      }
     }
   }
 
@@ -559,6 +646,20 @@ export class ReelsComponent implements AfterViewInit {
         userName: user.displayName || 'Usuario',
         userAvatar: avatar, createdAt: serverTimestamp(),
       });
+      if (!prev && c.userId) {
+        try {
+          await this.notificationService.notifyCommentReaction({
+            toUid: c.userId,
+            fromUid: user.uid,
+            fromName: user.displayName || 'Usuario',
+            fromAvatar: avatar,
+            reelId: reel.id!,
+            commentId: c.id!
+          });
+        } catch (error) {
+          console.error('No se pudo notificar la reacción al comentario del reel:', error);
+        }
+      }
     }
     this.commentReactionMenuId = null;
   }
@@ -606,6 +707,7 @@ export class ReelsComponent implements AfterViewInit {
     this.repostTargetReel = reel;
     this.repostDescription = '';
     this.repostTags        = [];
+    this.repostMentionTargets = [];
     this.mentionResults    = [];
     this.mentionActive     = false;
     this.showRepostModal   = true;
@@ -613,7 +715,8 @@ export class ReelsComponent implements AfterViewInit {
 
   onDescriptionInput(event: Event) {
     const val = (event.target as HTMLTextAreaElement).value;
-    this.repostDescription = val;
+    if (this.showRepostModal) this.repostDescription = val;
+    else this.description = val;
 
     const match = val.match(/@(\w*)$/);
     if (match) {
@@ -664,19 +767,30 @@ export class ReelsComponent implements AfterViewInit {
   selectMentionComment(user: { uid: string; userName: string }, reelId: string) {
     const tagName = user.userName.split(' ')[0];
     this.draftComments[reelId] = (this.draftComments[reelId] || '').replace(/@(\w*)$/, `@${tagName} `);
+    this.commentMentionTargets[reelId] ??= [];
+    this.addMentionTarget(this.commentMentionTargets[reelId], user);
     this.mentionActive  = false;
     this.mentionResults = [];
   }
 
   selectMention(user: { uid: string; userName: string }) {
     const tagName = user.userName.split(' ')[0];
-    this.repostDescription = this.repostDescription
-      ? this.repostDescription.replace(/@(\w*)$/, `@${tagName} `)
-      : this.description.replace(/@(\w*)$/, `@${tagName} `);
-    this.description = this.description.replace(/@(\w*)$/, `@${tagName} `);
-    if (!this.repostTags.includes(user.userName)) this.repostTags.push(user.userName);
+    if (this.showRepostModal) {
+      this.repostDescription = this.repostDescription.replace(/@(\w*)$/, `@${tagName} `);
+      if (!this.repostTags.includes(user.userName)) this.repostTags.push(user.userName);
+      this.addMentionTarget(this.repostMentionTargets, user);
+    } else {
+      this.description = this.description.replace(/@(\w*)$/, `@${tagName} `);
+      this.addMentionTarget(this.descriptionMentionTargets, user);
+    }
     this.mentionActive  = false;
     this.mentionResults = [];
+  }
+
+  private addMentionTarget(targets: { uid: string; userName: string }[], user: { uid: string; userName: string }): void {
+    if (!targets.some(target => target.uid === user.uid)) {
+      targets.push({ uid: user.uid, userName: user.userName });
+    }
   }
 
   removeRepostTag(tag: string) {
@@ -717,10 +831,32 @@ export class ReelsComponent implements AfterViewInit {
     const user = await firstValueFrom(this.auth.user$);
     if (!reel || !user) return;
 
-    await this.postService.repostReelToFeed(reel, user, {
+    const repostDescription = this.repostDescription.trim();
+    const mentionedUsers = this.repostMentionTargets;
+    const repostPostId = await this.postService.repostReelToFeed(reel, user, {
       description: this.repostDescription,
       tags:        this.repostTags,
     });
+
+    try {
+      await this.notificationService.notifyRepost({
+        toUid: reel.uid,
+        fromUid: user.uid,
+        fromName: user.displayName || 'Usuario',
+        fromAvatar: (await this.getUserAvatar(user.uid)) || user.photoURL || '',
+        reelId: reel.id!
+      });
+      await this.notificationService.notifyMentionedUsers({
+        users: mentionedUsers,
+        fromUid: user.uid,
+        fromName: user.displayName || 'Usuario',
+        fromAvatar: (await this.getUserAvatar(user.uid)) || user.photoURL || '',
+        text: repostDescription,
+        postId: repostPostId
+      });
+    } catch (error) {
+      console.error('No se pudieron notificar el repost o sus menciones:', error);
+    }
 
     reel.repostsCount  = (reel.repostsCount || 0) + 1;
     this.showRepostModal    = false;

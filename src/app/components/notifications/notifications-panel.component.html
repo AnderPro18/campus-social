@@ -44,7 +44,7 @@
       <span
         *ngIf="n.text && (n.type === 'comment' || n.type === 'message' || n.type === 'reply')"
         class="notif-preview">
-        "{{ n.text | slice:0:60 }}{{ (n.text?.length ?? 0) > 60 ? '…' : '' }}"
+        "{{ n.text | slice:0:60 }}{{ n.text.length > 60 ? '…' : '' }}"
       </span>
       <span class="notif-time">{{ timeAgo(n) }}</span>
     </div>
