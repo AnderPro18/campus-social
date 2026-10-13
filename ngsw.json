@@ -1,0 +1,99 @@
+{
+  "configVersion": 1,
+  "timestamp": 1791852160891,
+  "index": "/campus-social/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/campus-social/chunk-57QRWCJA.js",
+        "/campus-social/chunk-67ZLMHDH.js",
+        "/campus-social/chunk-6LWJRNMO.js",
+        "/campus-social/chunk-7Y6ZCT3X.js",
+        "/campus-social/chunk-ECZ4UVJ6.js",
+        "/campus-social/chunk-FEZLBPJX.js",
+        "/campus-social/chunk-GAZV3YXN.js",
+        "/campus-social/chunk-NSGGBJJQ.js",
+        "/campus-social/chunk-PCIV4LO4.js",
+        "/campus-social/chunk-THWTIXQU.js",
+        "/campus-social/chunk-X6ZHDPB4.js",
+        "/campus-social/chunk-Z2LJPQ5T.js",
+        "/campus-social/index.html",
+        "/campus-social/main-5AXQGUCZ.js",
+        "/campus-social/polyfills-5FDKUQTZ.js",
+        "/campus-social/scripts-3XTIANUT.js",
+        "/campus-social/styles-DJMI6JCE.css"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/campus-social/assets/default-avatar.png",
+        "/campus-social/assets/login-bg.png",
+        "/campus-social/assets/microsoft.png",
+        "/campus-social/assets/universidad-logo.png",
+        "/campus-social/media/bootstrap-icons-CVBWLLHT.woff2",
+        "/campus-social/media/bootstrap-icons-VQNJTM6Q.woff",
+        "/campus-social/media/login-bg-ICNS7W5X.png"
+      ],
+      "patterns": []
+    }
+  ],
+  "dataGroups": [],
+  "hashTable": {
+    "/campus-social/assets/default-avatar.png": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "/campus-social/assets/login-bg.png": "f305efff2f2080f2a2f2e37e71b41e8f70acf796",
+    "/campus-social/assets/microsoft.png": "ce313ffafa5b7b553fd2b7b3f1b9b86a1690bf02",
+    "/campus-social/assets/universidad-logo.png": "aa9424921fa6e9f1e3f5302c6608ec549f224c2a",
+    "/campus-social/chunk-57QRWCJA.js": "a478064ad7d17bce3f69fff5cf041e4f0eea02f9",
+    "/campus-social/chunk-67ZLMHDH.js": "4a719dc1510d226b4df29ebc1db487d8ae20dc4b",
+    "/campus-social/chunk-6LWJRNMO.js": "62867147091ae5c2026acc83b62ba9c277c4d0c6",
+    "/campus-social/chunk-7Y6ZCT3X.js": "3901b4ed9bd2736df93a03978aabc5899de1ae45",
+    "/campus-social/chunk-ECZ4UVJ6.js": "7d92a2df0249d6bab071398ad7984920916d6fe7",
+    "/campus-social/chunk-FEZLBPJX.js": "d9aefd8e2857fc50cfe6b4eae83bd51d92feca1e",
+    "/campus-social/chunk-GAZV3YXN.js": "a71176280db64fb7c117e7dceecd4be21765dacc",
+    "/campus-social/chunk-NSGGBJJQ.js": "4b4f54ea648614b74a1b3c2666025e93b0790209",
+    "/campus-social/chunk-PCIV4LO4.js": "0d1c7da4ff5c644fe9f46abc9b115a088d940270",
+    "/campus-social/chunk-THWTIXQU.js": "341855c5f108dbde98b4654cd17edcace2270dd5",
+    "/campus-social/chunk-X6ZHDPB4.js": "78783b934ea2d69d2370794222cf95269be03607",
+    "/campus-social/chunk-Z2LJPQ5T.js": "b57dce3f6fc4f890b4548bd355ed9190f0da615d",
+    "/campus-social/index.html": "81cafa036f723d0fa824499fb6a8a1dace421c17",
+    "/campus-social/main-5AXQGUCZ.js": "f208d1ed0d8737a074a176cd905b1c5ea88aec60",
+    "/campus-social/media/bootstrap-icons-CVBWLLHT.woff2": "b441fcff939e24fa0906a37b7788788b9fddbb68",
+    "/campus-social/media/bootstrap-icons-VQNJTM6Q.woff": "762010c79b4a05e1131fc8fb3b1aeff324d8033f",
+    "/campus-social/media/login-bg-ICNS7W5X.png": "f305efff2f2080f2a2f2e37e71b41e8f70acf796",
+    "/campus-social/polyfills-5FDKUQTZ.js": "aae1dda5ce0dc87ff4ccd4a96bfca1ae11e45f67",
+    "/campus-social/scripts-3XTIANUT.js": "0a32f1af52cc19a4f70366a3cd813ef5bc19ea49",
+    "/campus-social/styles-DJMI6JCE.css": "7b33b9e8764f3a1697c4a8e68a3a24785040751d"
+  },
+  "navigationUrls": [
+    {
+      "positive": true,
+      "regex": "^\\/.*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*\\.[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
+    }
+  ],
+  "navigationRequestStrategy": "performance"
+}
