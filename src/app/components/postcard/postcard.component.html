@@ -17,7 +17,12 @@
 
   <p class="post-text">{{ post.content }}</p>
 
-  <img *ngIf="post.imageUrl" [src]="post.imageUrl" class="post-image">
+  <app-post-image
+    *ngIf="post.imageUrl"
+    [src]="post.imageUrl"
+    [alt]="'Imagen publicada por ' + (post.userName || 'un usuario')"
+    class="post-image">
+  </app-post-image>
 
   <!-- acciones -->
   <div class="post-actions">

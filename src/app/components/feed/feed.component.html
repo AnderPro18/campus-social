@@ -49,7 +49,9 @@
   <ng-container *ngIf="posts$ | async as posts; else loadingTpl">
     <ng-container *ngIf="posts && posts.length > 0; else noPostsTpl">
 
-      <div *ngFor="let post of posts" class="post-card shadow-sm animate-new-post">
+      <div *ngFor="let post of posts"
+           class="post-card shadow-sm animate-new-post"
+           [class.repost-post]="post.type === 'repost'">
 
         <!-- HEADER -->
         <div class="post-header">
@@ -58,37 +60,16 @@
             <!-- REPOST -->
             <ng-container *ngIf="post.type === 'repost'; else originalHeader">
               <div class="repost-info">
-                🔁 <strong>{{ post.repostedByName }}</strong> ha compartido una publicación
+                🔁
+                <strong
+                  (click)="post.repostedById && goToProfile(post.repostedById)"
+                  style="cursor:pointer">
+                  {{ post.repostedByName || post.userName }}
+                </strong>
+                ha compartido una publicación
               </div>
               <div class="post-date mt-1">
-                {{ post.repostDate ? (post.repostDate | date:'short') : '' }}
-              </div>
-              <div class="original-author mt-2">
-                Publicación original de:
-                <strong (click)="post.originalAuthorId && goToProfile(post.originalAuthorId)" style="cursor:pointer">
-                  {{ post.originalAuthorName }}
-                </strong>
-              </div>
-              <div class="d-flex align-items-center gap-3 mt-3">
-                <div class="post-avatar">
-                  <img
-                    *ngIf="post.originalAuthorAvatar; else repostLetter"
-                    [src]="post.originalAuthorAvatar"
-                    class="avatar-img" />
-                  <ng-template #repostLetter>
-                    {{ (post.originalAuthorName || 'U').charAt(0) | uppercase }}
-                  </ng-template>
-                </div>
-                <div>
-                  <span class="post-user"
-                        (click)="post.originalAuthorId && goToProfile(post.originalAuthorId)"
-                        style="cursor:pointer">
-                    {{ post.originalAuthorName }}
-                  </span>
-                  <span class="post-date">
-                    {{ post.originalCreatedAt ? (post.originalCreatedAt | date:'short') : '' }}
-                  </span>
-                </div>
+                {{ (post.repostDate || post.createdAt) | date:'short' }}
               </div>
             </ng-container>
 
@@ -146,6 +127,57 @@
         <!-- /HEADER -->
 
         <!-- CONTENT -->
+        <div *ngIf="post.type === 'repost'; else regularPostContent" class="post-content">
+          <p *ngIf="post.repostCaption" class="post-text repost-caption">
+            {{ post.repostCaption }}
+          </p>
+
+          <div class="original-post-card">
+            <div class="original-post-header">
+              <div class="post-avatar">
+                <img
+                  *ngIf="post.originalAuthorAvatar"
+                  [src]="post.originalAuthorAvatar"
+                  class="avatar-img"
+                  [alt]="'Avatar de ' + (post.originalAuthorName || 'la persona autora')" />
+                <span *ngIf="!post.originalAuthorAvatar">
+                  {{ (post.originalAuthorName || 'U').charAt(0) | uppercase }}
+                </span>
+              </div>
+              <div>
+                <span
+                  class="post-user"
+                  (click)="post.originalAuthorId && goToProfile(post.originalAuthorId)"
+                  style="cursor:pointer">
+                  {{ post.originalAuthorName || 'Usuario' }}
+                </span>
+                <span class="post-date">
+                  {{ (post.originalCreatedAt || post.createdAt) | date:'short' }}
+                </span>
+              </div>
+            </div>
+
+            <p *ngIf="post.originalContent" class="post-text">
+              {{ post.originalContent }}
+            </p>
+            <app-post-image
+              *ngIf="(post.originalImageUrl || post.imageUrl) as originalImageUrl"
+              [src]="originalImageUrl"
+              [alt]="'Imagen publicada por ' + (post.originalAuthorName || 'un usuario')"
+              class="post-image rounded">
+            </app-post-image>
+            <video
+              *ngIf="post.originalVideoUrl || post.videoUrl"
+              [src]="post.originalVideoUrl || post.videoUrl"
+              controls
+              playsinline
+              preload="metadata"
+              class="post-video rounded mt-2">
+            </video>
+          </div>
+        </div>
+
+        <ng-template #regularPostContent>
         <div class="post-content">
           <p class="post-text">
             <ng-container *ngFor="let word of post.content.split(' ')">
@@ -157,7 +189,12 @@
               <span *ngIf="!word.startsWith('@')">{{ word }} </span>
             </ng-container>
           </p>
-          <img *ngIf="post.imageUrl" [src]="post.imageUrl" class="post-image rounded" />
+          <app-post-image
+            *ngIf="post.imageUrl"
+            [src]="post.imageUrl"
+            [alt]="'Imagen publicada por ' + (post.userName || 'un usuario')"
+            class="post-image rounded">
+          </app-post-image>
           <video *ngIf="post.videoUrl"
                  [src]="post.videoUrl"
                  controls
@@ -166,6 +203,7 @@
                  class="post-video rounded mt-2">
           </video>
         </div>
+        </ng-template>
         <!-- /CONTENT -->
 
         <!-- ACTIONS -->

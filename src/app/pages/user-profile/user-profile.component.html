@@ -142,9 +142,56 @@
       <div class="section" *ngIf="posts.length > 0">
         <h3>Publicaciones</h3>
         <div class="post-card" *ngFor="let post of posts">
-          <p class="post-content">{{ post.content }}</p>
-          <img *ngIf="post.imageUrl" [src]="post.imageUrl" class="post-image">
-          <span class="post-date">{{ post.createdAt | date:'mediumDate' }}</span>
+          <ng-container *ngIf="post.type === 'repost'; else originalProfilePost">
+            <div class="repost-info">
+              🔁 <strong>{{ post.repostedByName || post.userName }}</strong> ha compartido una publicación
+              <span class="post-date">{{ (post.repostDate || post.createdAt) | date:'mediumDate' }}</span>
+            </div>
+            <p *ngIf="post.repostCaption" class="repost-caption">{{ post.repostCaption }}</p>
+            <div class="original-post-card">
+              <div class="original-post-header">
+                <img
+                  *ngIf="post.originalAuthorAvatar"
+                  [src]="post.originalAuthorAvatar"
+                  [alt]="'Avatar de ' + (post.originalAuthorName || 'la persona autora')"
+                  class="original-post-avatar">
+                <div *ngIf="!post.originalAuthorAvatar" class="original-post-avatar original-post-initial">
+                  {{ (post.originalAuthorName || 'U').charAt(0) | uppercase }}
+                </div>
+                <div>
+                  <strong>{{ post.originalAuthorName || 'Usuario' }}</strong>
+                  <span class="post-date">{{ (post.originalCreatedAt || post.createdAt) | date:'mediumDate' }}</span>
+                </div>
+              </div>
+              <p *ngIf="post.originalContent || (!post.originalContent && post.content)" class="post-content">
+                {{ post.originalContent || post.content }}
+              </p>
+              <app-post-image
+                *ngIf="post.originalImageUrl || post.imageUrl"
+                [src]="post.originalImageUrl || post.imageUrl"
+                [alt]="'Imagen publicada por ' + (post.originalAuthorName || 'un usuario')"
+                class="post-image">
+              </app-post-image>
+              <video
+                *ngIf="post.originalVideoUrl || post.videoUrl"
+                [src]="post.originalVideoUrl || post.videoUrl"
+                controls
+                playsinline
+                class="post-image">
+              </video>
+            </div>
+          </ng-container>
+          <ng-template #originalProfilePost>
+            <p class="post-content">{{ post.content }}</p>
+            <app-post-image
+              *ngIf="post.imageUrl"
+              [src]="post.imageUrl"
+              [alt]="'Imagen publicada por ' + (post.userName || profileUser.displayName || 'un usuario')"
+              class="post-image">
+            </app-post-image>
+            <video *ngIf="post.videoUrl" [src]="post.videoUrl" controls playsinline class="post-image"></video>
+            <span class="post-date">{{ post.createdAt | date:'mediumDate' }}</span>
+          </ng-template>
         </div>
       </div>
   

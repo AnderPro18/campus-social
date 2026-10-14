@@ -1,0 +1,19 @@
+<div
+  *ngIf="imageViewer.imageUrl() as imageUrl"
+  class="image-lightbox"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Imagen ampliada"
+  (click)="imageViewer.close()">
+  <button
+    type="button"
+    class="image-lightbox-close"
+    aria-label="Cerrar imagen"
+    (click)="imageViewer.close()">
+    &times;
+  </button>
+  <img
+    [src]="imageUrl"
+    [alt]="imageViewer.imageAlt()"
+    (click)="$event.stopPropagation()">
+</div>
