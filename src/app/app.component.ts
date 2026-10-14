@@ -7,11 +7,12 @@ import { AuthService } from './services/auth.service';
 import { combineLatest } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ProfileStateService } from './services/profile-state.service';
+import { ImageLightboxComponent } from './components/image-viewer/image-lightbox.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterModule, NavbarComponent, CommonModule],
+  imports: [RouterOutlet, RouterModule, NavbarComponent, CommonModule, ImageLightboxComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })

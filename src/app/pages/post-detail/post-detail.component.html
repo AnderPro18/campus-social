@@ -20,7 +20,11 @@
     <p>{{ post.content }}</p>
 
 <div *ngIf="post.imageUrl" class="image-container">
-  <img [src]="post.imageUrl" class="post-img">
+  <app-post-image
+    [src]="post.imageUrl"
+    [alt]="'Imagen publicada por ' + (post.userName || 'un usuario')"
+    class="post-img">
+  </app-post-image>
 </div>    <video *ngIf="post.videoUrl" [src]="post.videoUrl" controls></video>
 
     <!-- 🔥 REACCIONES -->

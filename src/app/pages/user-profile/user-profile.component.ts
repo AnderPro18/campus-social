@@ -12,11 +12,12 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { FollowersComponent } from '../../components/followers/followers.component';
 import { NotificationService } from '../../services/notification.service';
+import { PostImageComponent } from '../../components/image-viewer/post-image.component';
 
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, FollowersComponent],
+  imports: [CommonModule, FormsModule, FollowersComponent, PostImageComponent],
   templateUrl: './user-profile.component.html',
   styleUrls: ['./user-profile.component.scss']
 })

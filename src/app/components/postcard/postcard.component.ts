@@ -6,12 +6,13 @@ import { Auth } from '@angular/fire/auth';
 
 import { ReportButtonComponent } from '../report-button/report-button.component';
 import { NotificationService } from '../../services/notification.service';
+import { PostImageComponent } from '../image-viewer/post-image.component';
 
 
 @Component({
   selector: 'app-post-card',
   standalone: true,
-  imports: [CommonModule, ReportButtonComponent],
+  imports: [CommonModule, ReportButtonComponent, PostImageComponent],
   templateUrl: './postcard.component.html',
   styleUrls: ['./postcard.component.scss'],
 })

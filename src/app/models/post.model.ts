@@ -38,6 +38,14 @@ export interface Post {
 
   originalAuthorAvatar?: string;
 
+  originalContent?: string;
+
+  originalImageUrl?: string;
+
+  originalVideoUrl?: string;
+
+  repostCaption?: string;
+
   repostedById?: string;
 
   repostedByName?: string;

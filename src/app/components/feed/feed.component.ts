@@ -9,6 +9,7 @@ import { SavedService } from '../../services/saved.service';
 import { PostService } from '../../services/post.service';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
+import { PostImageComponent } from '../image-viewer/post-image.component';
 // ------------------------------------------------------
 // INTERFACES
 // ------------------------------------------------------
@@ -24,8 +25,13 @@ export interface Post {
   originalPostId?: string;
   originalAuthorId?: string;
   originalAuthorName?: string;
+  originalType?: string;
   originalCreatedAt?: Date;
   originalAuthorAvatar?: string;
+  originalContent?: string;
+  originalImageUrl?: string;
+  originalVideoUrl?: string;
+  repostCaption?: string;
 
   repostedById?: string;
   repostedByName?: string;
@@ -66,7 +72,7 @@ type ReactionType =
 @Component({
   selector: 'app-feed',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PostImageComponent],
   templateUrl: './feed.component.html',
   styleUrls: ['./feed.component.scss'],
 })
@@ -206,6 +212,11 @@ repostTags: string[] = [];
             originalAuthorId: d.originalAuthorId || null,
             originalAuthorName: d.originalAuthorName || null,
             originalAuthorAvatar: d.originalAuthorAvatar || null,
+            originalType: d.originalType || null,
+            originalContent: d.originalContent ?? (d.type === 'repost' ? d.content ?? '' : ''),
+            originalImageUrl: d.originalImageUrl ?? (d.type === 'repost' ? d.imageUrl ?? null : null),
+            originalVideoUrl: d.originalVideoUrl ?? (d.type === 'repost' ? d.videoUrl ?? null : null),
+            repostCaption: d.repostCaption ?? (d.originalContent !== undefined ? d.content ?? '' : ''),
  
             repostedById: d.repostedById || null,
             repostedByName: d.repostedByName || null,
@@ -830,27 +841,44 @@ getReactionLabel(type: ReactionType | null): string {
 
     
 
+    const isRepost = post.type === 'repost';
+    const originalContent = isRepost ? post.originalContent || post.content : post.content;
+    const originalImageUrl = isRepost ? post.originalImageUrl || post.imageUrl : post.imageUrl;
+    const originalVideoUrl = isRepost ? post.originalVideoUrl || post.videoUrl : post.videoUrl;
+    const originalAuthorId = isRepost ? post.originalAuthorId || post.userId : post.userId;
+    const originalAuthorName = isRepost ? post.originalAuthorName || post.userName : post.userName;
+    const originalAuthorAvatar = isRepost
+      ? post.originalAuthorAvatar || post.userAvatar || ''
+      : post.userAvatar || '';
+
     const repostRef = await addDoc(collection(this.firestore, 'posts'), {
       type: 'repost',
-    originalPostId: post.id,
-    originalAuthorId: post.userId,
-    originalAuthorName: post.userName,
-    originalAuthorAvatar: post.userAvatar || '',
-    originalCreatedAt: post.createdAt,
-    userId: user.uid,
-    userName: user.displayName || 'Usuario',
-    repostedById: user.uid,
-    repostedByName: user.displayName || 'Usuario',
-    content: repostDescription || post.content,
-    tags: this.repostTags,
-    imageUrl: post.imageUrl || '',
-    createdAt: serverTimestamp(),
-    repostDate: serverTimestamp(),
-    likesCount: 0, commentsCount: 0, repostsCount: 0,
-  });
+      originalPostId: isRepost ? post.originalPostId || post.id : post.id,
+      originalType: isRepost ? post.originalType || 'post' : post.type || 'post',
+      originalAuthorId,
+      originalAuthorName,
+      originalAuthorAvatar,
+      originalCreatedAt: isRepost ? post.originalCreatedAt || post.createdAt : post.createdAt,
+      originalContent,
+      originalImageUrl: originalImageUrl || '',
+      originalVideoUrl: originalVideoUrl || '',
+      repostCaption: repostDescription,
+      userId: user.uid,
+      userName: user.displayName || 'Usuario',
+      repostedById: user.uid,
+      repostedByName: user.displayName || 'Usuario',
+      content: repostDescription,
+      tags: this.repostTags,
+      imageUrl: originalImageUrl || '',
+      videoUrl: originalVideoUrl || '',
+      createdAt: serverTimestamp(),
+      repostDate: serverTimestamp(),
+      likesCount: 0,
+      commentsCount: 0,
+      repostsCount: 0,
+    });
 
   const avatar = (await this.getUserAvatar(user.uid)) || user.photoURL || '';
-  const originalAuthorId = post.type === 'repost' ? (post.originalAuthorId || post.userId) : post.userId;
   try {
     if (originalAuthorId) {
       const originalPath = this.getRealPostPath(post);

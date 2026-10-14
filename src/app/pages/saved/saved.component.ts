@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { SavedService } from '../../services/saved.service';
 import { AuthService } from '../../services/auth.service';
 import { firstValueFrom } from 'rxjs';
+import { PostImageComponent } from '../../components/image-viewer/post-image.component';
 
 @Component({
   selector: 'app-saved',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PostImageComponent],
   templateUrl: './saved.component.html',
   styleUrls: ['./saved.component.scss']
 })
