@@ -25,6 +25,7 @@ import { PostService, ReactionType } from '../../services/post.service';
 import { UserService } from '../../services/user.service';
 import { FollowersComponent } from '../../components/followers/followers.component';
 import { NotificationService } from '../../services/notification.service';
+import { PostImageComponent } from '../../components/image-viewer/post-image.component';
 
 const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_IMAGE_DATA_URL_LENGTH = 400_000;
@@ -33,7 +34,7 @@ const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, FollowersComponent],
+  imports: [CommonModule, FormsModule, FollowersComponent, PostImageComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']
 })
@@ -427,7 +428,7 @@ export class ProfileComponent {
   // FEED UNIFICADO
   // =============================
   buildProfileFeed() {
-    const posts = this.myPosts.map(p => ({ ...p, type: 'post' }));
+    const posts = this.myPosts.map(p => ({ ...p, type: p.type || 'post' }));
     const reels = this.myReels.map(r => ({ ...r, type: 'reel' }));
 
     this.profileFeed = [...posts, ...reels].sort(
@@ -496,6 +497,19 @@ export class ProfileComponent {
             content: data.content || '',
             imageUrl: data.imageUrl || null,
             videoUrl: data.videoUrl || null,
+            originalPostId: data.originalPostId || null,
+            originalType: data.originalType || null,
+            originalAuthorId: data.originalAuthorId || null,
+            originalAuthorName: data.originalAuthorName || '',
+            originalAuthorAvatar: data.originalAuthorAvatar || '',
+            originalCreatedAt: data.originalCreatedAt ? this.fixDate(data.originalCreatedAt) : null,
+            originalContent: data.originalContent ?? (data.type === 'repost' ? data.content || '' : ''),
+            originalImageUrl: data.originalImageUrl || (data.type === 'repost' ? data.imageUrl || '' : ''),
+            originalVideoUrl: data.originalVideoUrl || (data.type === 'repost' ? data.videoUrl || '' : ''),
+            repostCaption: data.repostCaption ?? (data.originalContent !== undefined ? data.content || '' : ''),
+            repostDate: data.repostDate ? this.fixDate(data.repostDate) : null,
+            repostedById: data.repostedById || data.userId,
+            repostedByName: data.repostedByName || data.userName,
             tags: data.tags || [],
             // ✅ fixDate maneja serverTimestamp pendiente (puede llegar null la primera vez)
             createdAt: this.fixDate(data.createdAt),
@@ -604,12 +618,38 @@ export class ProfileComponent {
   async repost(item: any) {
     if (!this.user) return;
 
+    const isRepost = item.type === 'repost';
+    const originalContent = isRepost ? item.originalContent || item.content : item.content || item.description || '';
+    const originalImageUrl = isRepost ? item.originalImageUrl || item.imageUrl : item.imageUrl;
+    const originalVideoUrl = isRepost ? item.originalVideoUrl || item.videoUrl : item.videoUrl;
+
     await addDoc(collection(this.firestore, 'posts'), {
-      ...item,
       type: 'repost',
+      originalPostId: isRepost ? item.originalPostId || item.id : item.id,
+      originalType: isRepost ? item.originalType || 'post' : item.type || 'post',
+      originalAuthorId: isRepost ? item.originalAuthorId || item.userId : item.userId || item.uid,
+      originalAuthorName: isRepost ? item.originalAuthorName || item.userName : item.userName,
+      originalAuthorAvatar: isRepost
+        ? item.originalAuthorAvatar || item.userAvatar || ''
+        : item.userAvatar || item.avatarUrl || '',
+      originalCreatedAt: isRepost ? item.originalCreatedAt || item.createdAt : item.createdAt,
+      originalContent,
+      originalImageUrl: originalImageUrl || '',
+      originalVideoUrl: originalVideoUrl || '',
+      repostCaption: '',
+      content: '',
+      imageUrl: originalImageUrl || '',
+      videoUrl: originalVideoUrl || '',
+      userId: this.user.uid,
+      userName: this.user.displayName || 'Usuario',
+      userAvatar: this.avatar || this.user.photoURL || '',
       repostedById: this.user.uid,
-      repostedByName: this.user.displayName,
-      createdAt: serverTimestamp()
+      repostedByName: this.user.displayName || 'Usuario',
+      createdAt: serverTimestamp(),
+      repostDate: serverTimestamp(),
+      likesCount: 0,
+      commentsCount: 0,
+      repostsCount: 0
     });
 
     const originalUid = item.uid || item.userId || item.originalAuthorId;

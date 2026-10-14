@@ -213,6 +213,45 @@
   margin-top: 10px;
 }
 
+.profile-repost-card {
+  padding: 14px;
+}
+
+.repost-info {
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+}
+
+.repost-caption {
+  margin: 0 0 12px;
+  color: var(--text-primary);
+  white-space: pre-line;
+}
+
+.original-post-card {
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: var(--surface-alt);
+}
+
+.original-post-avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.original-post-initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-gradient);
+  color: var(--text-on-brand);
+  font-weight: 700;
+}
+
 /* ─── Botones de acción ─── */
 .actions-row {
   display: flex;

@@ -133,6 +133,50 @@
 
     <div *ngFor="let item of profileFeed">
 
+      <!-- ================= REPOST ================= -->
+      <div *ngIf="item.type === 'repost'" class="post-card profile-repost-card mb-4">
+        <div class="repost-info">
+          🔁 <strong>{{ item.repostedByName || item.userName }}</strong> ha compartido una publicación
+          <small class="text-muted d-block">{{ (item.repostDate || item.createdAt) | date:'short' }}</small>
+        </div>
+
+        <p *ngIf="item.repostCaption" class="repost-caption">{{ item.repostCaption }}</p>
+
+        <div class="original-post-card">
+          <div class="post-header d-flex align-items-center gap-2">
+            <img
+              *ngIf="item.originalAuthorAvatar"
+              [src]="item.originalAuthorAvatar"
+              [alt]="'Avatar de ' + (item.originalAuthorName || 'la persona autora')"
+              class="original-post-avatar">
+            <div *ngIf="!item.originalAuthorAvatar" class="original-post-avatar original-post-initial">
+              {{ (item.originalAuthorName || 'U').charAt(0) | uppercase }}
+            </div>
+            <div>
+              <strong>{{ item.originalAuthorName || 'Usuario' }}</strong>
+              <small class="text-muted d-block">
+                {{ (item.originalCreatedAt || item.createdAt) | date:'short' }}
+              </small>
+            </div>
+          </div>
+
+          <p *ngIf="item.originalContent" class="mt-2">{{ item.originalContent }}</p>
+          <app-post-image
+            *ngIf="(item.originalImageUrl || item.imageUrl) as originalImageUrl"
+            [src]="originalImageUrl"
+            [alt]="'Imagen publicada por ' + (item.originalAuthorName || 'un usuario')"
+            class="w-100 rounded">
+          </app-post-image>
+          <video
+            *ngIf="item.originalVideoUrl || item.videoUrl"
+            [src]="item.originalVideoUrl || item.videoUrl"
+            controls
+            playsinline
+            class="w-100 rounded">
+          </video>
+        </div>
+      </div>
+
       <!-- ================= POST ================= -->
       <div *ngIf="item.type === 'post'" class="post-card mb-4">
 
@@ -149,7 +193,12 @@
         <div class="mt-2">
           <p>{{ item.content }}</p>
 
-          <img *ngIf="item.imageUrl" [src]="item.imageUrl" class="w-100 rounded">
+          <app-post-image
+            *ngIf="item.imageUrl"
+            [src]="item.imageUrl"
+            [alt]="'Imagen publicada por ' + (item.userName || 'un usuario')"
+            class="w-100 rounded">
+          </app-post-image>
           <video *ngIf="item.videoUrl" [src]="item.videoUrl" controls class="w-100 rounded"></video>
         </div>
 

@@ -97,11 +97,12 @@
       </p>
 
       <!-- Imagen -->
-      <img
+      <app-post-image
         *ngIf="selectedPost.imageUrl && selectedPost.type !== 'reel'"
         [src]="selectedPost.imageUrl"
-        class="modal-image"
-      />
+        [alt]="'Imagen publicada por ' + (selectedPost.userName || 'un usuario')"
+        class="modal-image">
+      </app-post-image>
 
       <!-- Video reel -->
       <video
