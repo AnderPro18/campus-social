@@ -33,4 +33,14 @@ export interface AppUser {
   followingCount?: number;
   fcmTokens?: string[];
   updatedAt?: Timestamp | Date;
+
+
+    /** Bloqueo aplicado por un moderador (HU-15) */
+  blocked?: boolean;
+
+  blockedAt?: any;
+
+  blockedBy?: string;
+
+  blockReason?: string;
 }

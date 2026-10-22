@@ -8,6 +8,7 @@ import { ProfileStateService } from '../../services/profile-state.service';
 import { ChatService } from '../../services/chat.service';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationsPanelComponent } from '../notifications/notifications-panel.component';
+import { ModerationService } from '../../services/moderation.service';
 
 @Component({
   selector: 'app-navbar',
@@ -24,8 +25,10 @@ export class NavbarComponent {
   private profileState = inject(ProfileStateService);
   private chatService = inject(ChatService);
   readonly notificationService = inject(NotificationService);
+  private moderation = inject(ModerationService);
 
   user$ = this.auth.user$;
+    isModerator$ = this.moderation.isModerator$;
   unreadChatsCount$ = this.chatService.getUnreadChatsCount();
 
   isMenuOpen = false;

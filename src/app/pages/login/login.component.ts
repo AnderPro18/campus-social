@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { PushService } from '../../services/push.service';
@@ -23,10 +23,14 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
+    if (this.route.snapshot.queryParamMap.get('blocked')) {
+      this.error = 'Tu cuenta fue bloqueada por un moderador. Si crees que es un error, comunícate con la administración.';
+    }
     this.pushService.requestPermissionAndSaveToken();
   }
 

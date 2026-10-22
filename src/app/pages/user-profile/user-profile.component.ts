@@ -13,11 +13,12 @@ import { firstValueFrom } from 'rxjs';
 import { FollowersComponent } from '../../components/followers/followers.component';
 import { NotificationService } from '../../services/notification.service';
 import { PostImageComponent } from '../../components/image-viewer/post-image.component';
+import { ReportButtonComponent } from '../../components/report-button/report-button.component';
 
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, FollowersComponent, PostImageComponent],
+  imports: [CommonModule, FormsModule, FollowersComponent, PostImageComponent, ReportButtonComponent],
   templateUrl: './user-profile.component.html',
   styleUrls: ['./user-profile.component.scss']
 })

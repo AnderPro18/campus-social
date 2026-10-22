@@ -17,6 +17,18 @@
   }
 }
 
+.report-trigger.labeled {
+  font-size: 14px;
+  opacity: 0.85;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
+.report-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 0 0 var(--sp-2);
+}
+
 .report-modal-overlay {
   position: fixed;
   inset: 0;

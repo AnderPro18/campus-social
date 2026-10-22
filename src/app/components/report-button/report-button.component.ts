@@ -24,6 +24,8 @@ export class ReportButtonComponent {
   @Input({ required: true }) itemPath!: string;
   /** UID del dueño del contenido, si se conoce */
   @Input() itemOwnerId?: string;
+  /** Texto opcional junto al icono (ej. "Reportar usuario") */
+  @Input() label = '';
 
   private reportService = inject(ReportService);
 
@@ -32,14 +34,26 @@ export class ReportButtonComponent {
   submitted = false;
   selectedReason: ReportReason | null = null;
   details = '';
+  error = '';
 
   readonly reasons = Object.entries(REPORT_REASON_LABELS) as [ReportReason, string][];
+
+  get title(): string {
+    return this.itemType === 'user' ? 'Reportar usuario' : 'Reportar contenido';
+  }
+
+  /** Con el motivo "Otro" el detalle es obligatorio, para que el moderador entienda el caso */
+  get canSubmit(): boolean {
+    if (!this.selectedReason || this.submitting) return false;
+    return this.selectedReason !== 'other' || this.details.trim().length > 0;
+  }
 
   openModal() {
     this.modalOpen = true;
     this.submitted = false;
     this.selectedReason = null;
     this.details = '';
+    this.error = '';
   }
 
   closeModal() {
@@ -47,21 +61,23 @@ export class ReportButtonComponent {
   }
 
   async submit() {
-    if (!this.selectedReason || this.submitting) return;
+    if (!this.canSubmit) return;
 
     this.submitting = true;
+    this.error = '';
     try {
       await this.reportService.submitReport({
         itemType: this.itemType,
         itemId: this.itemId,
         itemPath: this.itemPath,
         itemOwnerId: this.itemOwnerId,
-        reason: this.selectedReason,
+        reason: this.selectedReason!,
         details: this.details.trim() || undefined,
       });
       this.submitted = true;
     } catch (err) {
       console.error('Error al enviar el reporte:', err);
+      this.error = 'No se pudo enviar el reporte. Inténtalo de nuevo.';
     } finally {
       this.submitting = false;
     }

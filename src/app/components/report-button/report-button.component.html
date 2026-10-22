@@ -1,5 +1,5 @@
-<button class="report-trigger" (click)="openModal()" title="Reportar">
-  🚩
+<button class="report-trigger" [class.labeled]="label" (click)="openModal()" [title]="title">
+  🚩<span *ngIf="label"> {{ label }}</span>
 </button>
 
 <div class="report-modal-overlay" *ngIf="modalOpen" (click)="closeModal()">
@@ -7,7 +7,7 @@
 
     <ng-container *ngIf="!submitted; else thanksTpl">
       <div class="report-modal-header">
-        <h4>Reportar contenido</h4>
+        <h4>{{ title }}</h4>
         <button class="close-btn" (click)="closeModal()">✖</button>
       </div>
 
@@ -22,14 +22,16 @@
 
       <textarea
         class="details-input"
-        placeholder="Detalles adicionales (opcional)"
+        [placeholder]="selectedReason === 'other' ? 'Cuéntanos qué pasó (obligatorio)' : 'Detalles adicionales (opcional)'"
         rows="3"
         [(ngModel)]="details">
       </textarea>
 
+      <p class="report-error" *ngIf="error">{{ error }}</p>
+
       <button
         class="btn btn-primary w-100"
-        [disabled]="!selectedReason || submitting"
+        [disabled]="!canSubmit"
         (click)="submit()">
         {{ submitting ? 'Enviando...' : 'Enviar reporte' }}
       </button>

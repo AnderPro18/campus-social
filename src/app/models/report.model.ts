@@ -55,4 +55,12 @@ export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
   inappropriate_content: 'Contenido inapropiado',
   misinformation: 'Información falsa',
   other: 'Otro motivo',
+}
+
+export const REPORT_TYPE_LABELS: Record<ReportedItemType, string> = {
+  post: 'Publicación',
+  comment: 'Comentario',
+  reply: 'Respuesta',
+  reel: 'Reel',
+  user: 'Usuario',
 };

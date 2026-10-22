@@ -44,60 +44,16 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') in ['admin', 'moderator'];
     }
 
+    // true si un moderador bloqueó la cuenta (campo users/{uid}.blocked). Un usuario
+    // bloqueado ya no puede crear publicaciones, reels, comentarios ni mensajes.
+    function isBlocked() {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('blocked', false) == true;
+    }
+
     // Solo compara si los campos modificados están dentro de una lista permitida
     function onlyChangedFields(allowedFields) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowedFields);
-    }
-
-    function validProfileData() {
-      return (!('displayName' in request.resource.data)
-          || (request.resource.data.displayName is string
-            && request.resource.data.displayName.size() > 0
-            && request.resource.data.displayName.size() <= 80))
-        && (!('bio' in request.resource.data)
-          || (request.resource.data.bio is string
-            && request.resource.data.bio.size() <= 300))
-        && (!('location' in request.resource.data)
-          || (request.resource.data.location is string
-            && request.resource.data.location.size() <= 100))
-        && (!('careerOrArea' in request.resource.data)
-          || (request.resource.data.careerOrArea is string
-            && request.resource.data.careerOrArea.size() <= 100))
-        && (!('birthPlace' in request.resource.data)
-          || (request.resource.data.birthPlace is string
-            && request.resource.data.birthPlace.size() <= 100))
-        && (!('avatar' in request.resource.data)
-          || (request.resource.data.avatar is string
-            && request.resource.data.avatar.size() <= 400000))
-        && (!('cover' in request.resource.data)
-          || (request.resource.data.cover is string
-            && request.resource.data.cover.size() <= 400000));
-    }
-
-    function validProfileChanges() {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return (!changed.hasAny(['displayName'])
-          || (request.resource.data.displayName is string
-            && request.resource.data.displayName.size() > 0
-            && request.resource.data.displayName.size() <= 80))
-        && (!changed.hasAny(['bio'])
-          || (request.resource.data.bio is string
-            && request.resource.data.bio.size() <= 300))
-        && (!changed.hasAny(['location'])
-          || (request.resource.data.location is string
-            && request.resource.data.location.size() <= 100))
-        && (!changed.hasAny(['careerOrArea'])
-          || (request.resource.data.careerOrArea is string
-            && request.resource.data.careerOrArea.size() <= 100))
-        && (!changed.hasAny(['birthPlace'])
-          || (request.resource.data.birthPlace is string
-            && request.resource.data.birthPlace.size() <= 100))
-        && (!changed.hasAny(['avatar'])
-          || (request.resource.data.avatar is string
-            && request.resource.data.avatar.size() <= 400000))
-        && (!changed.hasAny(['cover'])
-          || (request.resource.data.cover is string
-            && request.resource.data.cover.size() <= 400000));
     }
 
     /* =====================================================
@@ -111,21 +67,34 @@ service cloud.firestore {
       allow create: if isOwner(uid)
         && request.resource.data.keys().hasOnly([
           'displayName', 'email', 'fechaNacimiento', 'ciudad',
-          'departamento', 'descripcion', 'carrera', 'area', 'updatedAt',
-          'bio', 'location', 'career', 'careerOrArea', 'birthDate',
-          'birthPlace', 'avatar', 'cover'
-        ])
-        && validProfileData();
+          'departamento', 'descripcion', 'carrera', 'area', 'updatedAt'
+        ]);
 
       // FIX: el dueño puede actualizar su perfil, pero NO puede tocar
       // 'role' él mismo — eso evita que cualquier usuario se auto-asigne
       // admin/moderator. Solo otro moderador (o la consola de Firebase)
       // puede cambiar el rol de alguien.
-      allow update: if isOwner(uid)
-        && validProfileChanges()
-        && (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
-          || isModerator()
+      allow update: if (
+          isOwner(uid)
+          && (
+            !request.resource.data.diff(resource.data).affectedKeys()
+                .hasAny(['role', 'blocked', 'blockedAt', 'blockedBy', 'blockReason'])
+            || isModerator()
+          )
+        )
+        // Un moderador puede bloquear/desbloquear a un usuario normal (nunca a otro
+        // moderador/admin) y solo puede tocar los campos del bloqueo.
+        || (
+          isModerator()
+          && resource.data.get('role', 'user') == 'user'
+          && onlyChangedFields(['blocked', 'blockedAt', 'blockedBy', 'blockReason'])
+        )
+        // Seguir / dejar de seguir: cualquier usuario puede sumar o restar exactamente 1
+        // al contador followersCount de otra persona, y no puede tocar ningún otro campo.
+        || (
+          isAuthenticated()
+          && onlyChangedFields(['followersCount'])
+          && math.abs(request.resource.data.followersCount - resource.data.get('followersCount', 0)) == 1
         );
 
       allow delete: if isOwner(uid);
@@ -144,6 +113,30 @@ service cloud.firestore {
     }
 
     /* =====================================================
+       FOLLOWS  (seguidores y seguidos)
+       follows/{uid}/following/{otro}  -> a quién sigue uid
+       follows/{uid}/followers/{otro}  -> quién sigue a uid
+       Cada usuario solo crea o borra SU propia relación:
+       - en "following": el dueño de la lista (quien sigue).
+       - en "followers": quien se agrega o quita como seguidor.
+    ===================================================== */
+
+    match /follows/{ownerId} {
+
+      match /following/{targetId} {
+        allow read: if isAuthenticated();
+        allow create, delete: if isOwner(ownerId);
+        allow update: if false;
+      }
+
+      match /followers/{followerId} {
+        allow read: if isAuthenticated();
+        allow create, delete: if isOwner(followerId);
+        allow update: if false;
+      }
+    }
+
+    /* =====================================================
        POSTS
        FIX: update ya no está abierto a cualquier autenticado.
        El dueño tiene control total; cualquier otro usuario
@@ -156,7 +149,8 @@ service cloud.firestore {
 
       allow read:   if isAuthenticated();
       allow create: if isAuthenticated()
-        && request.resource.data.userId == request.auth.uid;
+        && request.resource.data.userId == request.auth.uid
+        && !isBlocked();
 
       allow update: if isAuthenticated()
         && (
@@ -165,7 +159,7 @@ service cloud.firestore {
         );
 
       allow delete: if isAuthenticated()
-        && request.auth.uid == resource.data.userId;
+        && (request.auth.uid == resource.data.userId || isModerator());
 
       match /reactions/{userId} {
         allow read:                   if isAuthenticated();
@@ -175,7 +169,8 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read:   if isAuthenticated();
         allow create: if isAuthenticated()
-          && request.auth.uid == request.resource.data.userId;
+          && request.auth.uid == request.resource.data.userId
+          && !isBlocked();
 
         allow update: if isAuthenticated()
           && (
@@ -184,7 +179,7 @@ service cloud.firestore {
           );
 
         allow delete: if isAuthenticated()
-          && request.auth.uid == resource.data.userId;
+          && (request.auth.uid == resource.data.userId || isModerator());
 
         match /reactions/{userId} {
           allow read:                   if isAuthenticated();
@@ -194,7 +189,8 @@ service cloud.firestore {
         match /replies/{replyId} {
           allow read:   if isAuthenticated();
           allow create: if isAuthenticated()
-            && request.auth.uid == request.resource.data.userId;
+            && request.auth.uid == request.resource.data.userId
+            && !isBlocked();
 
           allow update: if isAuthenticated()
             && (
@@ -203,7 +199,7 @@ service cloud.firestore {
             );
 
           allow delete: if isAuthenticated()
-            && request.auth.uid == resource.data.userId;
+            && (request.auth.uid == resource.data.userId || isModerator());
         }
       }
     }
@@ -219,7 +215,8 @@ service cloud.firestore {
 
       allow read:   if isAuthenticated();
       allow create: if isAuthenticated()
-        && request.resource.data.uid == request.auth.uid;
+        && request.resource.data.uid == request.auth.uid
+        && !isBlocked();
 
       allow update: if isAuthenticated()
         && (
@@ -228,7 +225,7 @@ service cloud.firestore {
         );
 
       allow delete: if isAuthenticated()
-        && request.auth.uid == resource.data.uid;
+        && (request.auth.uid == resource.data.uid || isModerator());
 
       match /reactions/{userId} {
         allow read:                   if isAuthenticated();
@@ -238,7 +235,8 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read:   if isAuthenticated();
         allow create: if isAuthenticated()
-          && request.auth.uid == request.resource.data.userId;
+          && request.auth.uid == request.resource.data.userId
+          && !isBlocked();
 
         allow update: if isAuthenticated()
           && (
@@ -247,7 +245,7 @@ service cloud.firestore {
           );
 
         allow delete: if isAuthenticated()
-          && request.auth.uid == resource.data.userId;
+          && (request.auth.uid == resource.data.userId || isModerator());
 
         match /reactions/{userId} {
           allow read:                   if isAuthenticated();
@@ -257,7 +255,8 @@ service cloud.firestore {
         match /replies/{replyId} {
           allow read:   if isAuthenticated();
           allow create: if isAuthenticated()
-            && request.auth.uid == request.resource.data.userId;
+            && request.auth.uid == request.resource.data.userId
+            && !isBlocked();
 
           allow update: if isAuthenticated()
             && (
@@ -266,7 +265,7 @@ service cloud.firestore {
             );
 
           allow delete: if isAuthenticated()
-            && request.auth.uid == resource.data.userId;
+            && (request.auth.uid == resource.data.userId || isModerator());
         }
       }
     }
@@ -348,7 +347,8 @@ service cloud.firestore {
         allow read: if isChatMember(chatId);
 
         allow create: if isChatMember(chatId)
-          && request.resource.data.senderId == request.auth.uid;
+          && request.resource.data.senderId == request.auth.uid
+          && !isBlocked();
 
         allow update: if isAuthenticated()
           && (
@@ -390,6 +390,23 @@ service cloud.firestore {
         && request.resource.data.status == 'pending';
 
       allow read, update, delete: if isModerator();
+    }
+
+    /* =====================================================
+       ADMIN ACTIONS  (registro de auditoría de moderación)
+       Solo moderadores/admins pueden leer y crear registros, y
+       cada registro debe llevar el uid de quien lo crea. Son
+       inmutables: nadie puede editarlos ni borrarlos.
+    ===================================================== */
+
+    match /adminActions/{actionId} {
+
+      allow read: if isModerator();
+
+      allow create: if isModerator()
+        && request.resource.data.adminId == request.auth.uid;
+
+      allow update, delete: if false;
     }
 
     /* =====================================================

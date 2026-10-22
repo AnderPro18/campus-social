@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, Renderer2 } from '@angular/core';
+import { Component, OnInit, inject, Renderer2, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Firestore, collection, collectionData, addDoc, query, orderBy, serverTimestamp, Timestamp, 
@@ -10,6 +10,7 @@ import { PostService } from '../../services/post.service';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
 import { PostImageComponent } from '../image-viewer/post-image.component';
+import { ReportService } from '../../services/report.service';
 // ------------------------------------------------------
 // INTERFACES
 // ------------------------------------------------------
@@ -83,6 +84,7 @@ export class FeedComponent implements OnInit {
   private router = inject(Router);
   private commentReactions: Record<string, Record<string, ReactionType>> = {};
   private notificationService = inject(NotificationService);
+    private reportService = inject(ReportService);
 
   newContent = '';
   selectedFileBase64: string | null = null;
@@ -93,6 +95,8 @@ export class FeedComponent implements OnInit {
   savedService = inject(SavedService);
   renderer = inject(Renderer2);
   private auth = inject(AuthService);
+  private cdr = inject(ChangeDetectorRef);
+  private zone = inject(NgZone);
 
   commentsMap: Record<string, CommentItem[]> = {};
   currentUid: string | null = null;
@@ -396,8 +400,6 @@ repostTags: string[] = [];
       repostsCount: 0,
     };
 
-    console.log('PUBLICANDO:', payload);
-
     const ref = await addDoc(
       collection(this.firestore, 'posts'),
       payload
@@ -497,7 +499,7 @@ repostTags: string[] = [];
     const idx = arr.findIndex((p) => p.id === postId);
     if (idx === -1) return;
     const copy = [...arr];
-    copy[idx][field] = exactValue;
+    copy[idx] = { ...copy[idx], [field]: exactValue };
     this.postsSubject.next(copy);
   }
 
@@ -507,7 +509,7 @@ repostTags: string[] = [];
     if (idx === -1) return;
     const copy = [...arr];
     const cur = copy[idx][field] || 0;
-    copy[idx][field] = Math.max(0, cur + delta);
+    copy[idx] = { ...copy[idx], [field]: Math.max(0, cur + delta) };
     this.postsSubject.next(copy);
   }
 
@@ -628,6 +630,9 @@ getReactionLabel(type: ReactionType | null): string {
     }
 
     try {
+      const avatarFromDoc = await this.getUserAvatar(user.uid);
+      const avatar = avatarFromDoc || user.photoURL || '';
+
       const snap = await getDoc(ref);
       if (reaction === null) {
         if (snap.exists()) await deleteDoc(ref);
@@ -658,12 +663,19 @@ getReactionLabel(type: ReactionType | null): string {
       
 
       const all = await getDocs(col);
-      this.updateLocalExact(post.id!, 'likesCount', all.size);
       const temp: Record<string, ReactionType> = {};
       all.forEach((d) => (temp[d.id] = d.data()['type']));
-      this.localReactions[post.id!] = temp;
+
+      setTimeout(() => {
+        this.zone.run(() => {
+          this.updateLocalExact(post.id!, 'likesCount', all.size);
+          this.localReactions[post.id!] = temp;
+          this.cdr.detectChanges();
+        });
+      }, 0);
     } catch (err) {
-      console.error(err);
+      console.error('❌ Error al reaccionar al post:', err);
+      this.zone.run(() => this.showToast('No se pudo guardar la reacción. Revisa tu conexión.'));
     }
   }
 
@@ -1031,18 +1043,28 @@ async confirmRepost() {
     this.postsSubject.next(this.postsSubject.getValue().filter((p) => p.id !== id));
   }
 
-  async reportPost(id: string) {
+   async reportPost(id: string) {
     const reason = prompt('Motivo del reporte:');
     if (!reason?.trim()) return;
-    const user = await firstValueFrom(this.authService.user$);
-    await addDoc(collection(this.firestore, 'reports'), {
-      postId: id,
-      reason: reason.trim(),
-      reporterId: user?.uid,
-      reporterName: user?.displayName,
-      createdAt: serverTimestamp(),
-    });
-    alert('Reporte enviado.');
+
+    // Si es un repost, se reporta la publicación original
+    const post: any = this.postsSubject.getValue().find((p) => p.id === id);
+    const realId = post ? this.getRealPostId(post) : id;
+
+    try {
+      await this.reportService.submitReport({
+        itemType: 'post',
+        itemId: realId,
+        itemPath: `posts/${realId}`,
+        itemOwnerId: post?.type === 'repost' ? undefined : post?.userId,
+        reason: 'other',
+        details: reason.trim(),
+      });
+      alert('Reporte enviado.');
+    } catch (err) {
+      console.error('Error al enviar el reporte:', err);
+      alert('No se pudo enviar el reporte. Inténtalo de nuevo.');
+    }
   }
 
   async replyToComment(post: any, comment: any) {
@@ -1349,6 +1371,7 @@ async selectCommentReaction(post: any, comment: any, reactionType: string) {
   }
 
   this.commentReactionMenuId = null;
+  setTimeout(() => this.zone.run(() => this.cdr.detectChanges()), 0);
 }
 
 startCommentHold(post: any, c: CommentItem, event: any) {
@@ -1414,6 +1437,7 @@ async toggleQuickCommentReaction(post: any, c: CommentItem) {
       }
     }
   }
+  setTimeout(() => this.zone.run(() => this.cdr.detectChanges()), 0);
 }
 
 async showCommentReactions(comment: CommentItem) {
